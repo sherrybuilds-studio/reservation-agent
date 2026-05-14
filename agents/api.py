@@ -1,4 +1,10 @@
+import sys
 import os
+
+# Same path guard as bot.py — prevents another-project/rag/ from shadowing ours.
+_project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+sys.path = [_project_root] + [p for p in sys.path if "another-project" not in p]
+
 import hmac
 import hashlib
 import logging
