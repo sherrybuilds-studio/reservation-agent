@@ -1,8 +1,14 @@
-# 🍽️ Restaurant Bot AI
-> Premium WhatsApp AI assistant for Berlin restaurants — built by [sherrybuilds-studio](https://github.com/sherrybuilds-studio)
+# Reservation Agent — restaurant AI assistant
+
+> **Status (2026-08-25):** public snapshot (May 2026) of the WhatsApp variant. The
+> current production version runs on Telegram inside a private platform monorepo
+> with a shared core and eval gates in CI — retrieval eval **10/10** on a fresh
+> index on 2026-08-25. Live products + dated evidence: [sherrybuilds.com](https://sherrybuilds.com)
+> · the newer sibling product, an AI phone receptionist, answers calls at **+1 650 479 7535**.
 
 ## What it does
-A full revenue management system delivered via WhatsApp. Not just a chatbot.
+Reservations, menu questions, no-show prevention, and owner reporting for a
+restaurant, grounded in the restaurant's own menu data via RAG.
 
 | Feature | What it means for the restaurant |
 |---|---|
@@ -18,7 +24,7 @@ A full revenue management system delivered via WhatsApp. Not just a chatbot.
 | Multilingual | German, English, Turkish, Arabic auto-detected |
 
 ## Tech stack
-- **AI** — claude-3.5-haiku via OpenRouter
+- **AI** — Claude Haiku via OpenRouter (3.5 in this snapshot; 4.5 in the current version — 3.5 was retired 2026-07)
 - **Vector DB** — ChromaDB with all-MiniLM-L6-v2 embeddings
 - **Search** — Hybrid semantic + keyword (70/30)
 - **Backend** — FastAPI + uvicorn on port 8001
@@ -27,7 +33,7 @@ A full revenue management system delivered via WhatsApp. Not just a chatbot.
 - **Automation** — n8n workflows for reminders, broadcasts, review monitoring
 - **Messaging** — Meta WhatsApp Cloud API
 
-## Eval score
+## Eval score (retrieval-only, no LLM — re-run 2026-08-25)
 RESULTS: 10/10 passed
 SCORE:   100%
 AVG RETRIEVAL SCORE: 0.6464
@@ -41,7 +47,7 @@ restaurant-bot/
 ├── data/            # menu.json (25 items, 46 indexed docs)
 └── tests/           # eval.py (10 gold standard questions)
 
-## Pricing (for clients)
+## Pricing (for clients, May 2026)
 - **Setup:** €2,500 (one-time)
 - **Monthly retainer:** €400/month
 - Includes: WhatsApp integration, menu RAG setup, Supabase tables, n8n workflows, owner Telegram dashboard
