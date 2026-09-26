@@ -1,56 +1,83 @@
-# Reservation Agent — restaurant AI assistant
+# reservation-agent
 
-> **Status (2026-08-25):** public snapshot (May 2026) of the WhatsApp variant. The
-> current production version runs on Telegram inside a private platform monorepo
-> with a shared core and eval gates in CI — retrieval eval **10/10** on a fresh
-> index on 2026-08-25. Live products + dated evidence: [sherrybuilds.com](https://sherrybuilds.com)
-> · the newer sibling product, an AI phone receptionist, answers calls at **+1 650 479 7535**.
+A WhatsApp assistant for restaurants. It takes table reservations, runs a waitlist, sends reminders, and answers menu questions from a retrieval index.
+It ships with a demo Turkish restaurant: 30 menu items plus specials, policies and FAQ in `data/menu.json`. Replies are in German by default, or in the guest's language (English, Turkish, Arabic).
+Retrieval passes 10 of 10 gold questions (eval dated 2026-09-02). The bot is built and tested but not deployed.
 
-## What it does
-Reservations, menu questions, no-show prevention, and owner reporting for a
-restaurant, grounded in the restaurant's own menu data via RAG.
+Author: Shehryar Irfan · [sherrybuilds.com](https://sherrybuilds.com) · [sherry.aiops@gmail.com](mailto:sherry.aiops@gmail.com)
 
-| Feature | What it means for the restaurant |
+---
+
+## Architecture
+
+```
+guest (WhatsApp)
+   │
+   ▼
+Meta Cloud API ──POST /webhook──▶ agents/api.py (FastAPI, :8001)
+                                   · HMAC-SHA256 signature check (X-Hub-Signature-256)
+                                   · slowapi: 10/min on POST, 30/min on GET
+                                   · prompt-injection pattern filter
+                                   ▼
+                          agents/bot.py
+                           · rule-based intent detection before any LLM call
+                           · reservation flow: date/time/party extraction → reservations/booking.py
+                           · otherwise: rag/retriever.py (0.7 semantic + 0.3 keyword, ChromaDB + MiniLM)
+                             → OpenRouter (anthropic/claude-3.5-haiku) with agents/system_prompt.md
+                                   ▼
+                          Supabase: reservations, customers, waitlist,
+                                    broadcast_log, review_log, analytics (setup.sql)
+
+Scheduled jobs (plain functions; any scheduler can call them, no workflows are in this repo):
+  reservations/reminders.py      24h and 2h reminders, guest replies confirm or cancel
+  reservations/waitlist.py       notify next guest when a slot frees, 15-minute confirm window
+  automations/broadcast.py       slow-night offer to past guests
+  automations/review_monitor.py  new Google reviews → Telegram alert to the owner
+  automations/review_responder.py  drafts a reply for the owner to approve (never posts)
+  automations/reports.py         daily and weekly covers report to Telegram (revenue is an estimate: covers × a fixed €35)
+```
+
+## What's verified
+
+| Check | Result | Evidence |
+|---|---|---|
+| Menu retrieval, 10 gold questions (dishes, allergens, prices, vegan and vegetarian, hours, group policy, location, one in German) | 10/10, average retrieval score 0.646 | [ai-systems-portfolio/evals/2026-09-02-restaurant-bot-eval.json](https://github.com/sherrybuilds-studio/ai-systems-portfolio/blob/main/evals/2026-09-02-restaurant-bot-eval.json) (2026-09-02, offline, index rebuilt first) |
+
+The dated run used the current copy of this code in my private monorepo, with the same `tests/eval.py` and menu. The eval checks retrieval only. It needs no LLM, Supabase or WhatsApp. Reservation, reminder and broadcast flows have no automated tests in this repo.
+
+## Run it
+
+```bash
+git clone https://github.com/sherrybuilds-studio/reservation-agent.git
+cd reservation-agent
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env              # fill in values; names below
+python3 rag/indexer.py            # build the ChromaDB index from data/menu.json
+python3 tests/eval.py             # retrieval gate, offline
+python3 -m agents.api             # webhook on :8001 (needs the WhatsApp and Supabase variables)
+```
+
+Database: run `setup.sql` once in the Supabase SQL editor.
+
+Environment variables (names only):
+
+| Variable | Used by |
 |---|---|
-| 24/7 WhatsApp + website chat | Never misses a customer inquiry |
-| Smart reservations | Books tables, sends RES-XXXX confirmation |
-| No-show prevention | 24h + 2h reminders, auto-releases table |
-| Waitlist management | Fills cancelled slots automatically |
-| Empty night broadcast | Tuesday 5pm WhatsApp blast to past customers — fills slow nights |
-| Google review shield | Instant Telegram alert for every new review, 🚨 URGENT flag for 1-2 stars |
-| AI review responses | Claude drafts German response for owner to approve |
-| Daily owner report | Telegram summary every morning — covers, revenue, cancellations |
-| Menu RAG | Answers allergen, price, ingredient questions from ChromaDB |
-| Multilingual | German, English, Turkish, Arabic auto-detected |
+| `OPENROUTER_API_KEY` | chat replies, review reply drafts |
+| `WHATSAPP_TOKEN`, `WHATSAPP_PHONE_ID` | sending messages |
+| `VERIFY_TOKEN`, `WHATSAPP_APP_SECRET` | webhook handshake and signature check |
+| `SUPABASE_URL`, `SUPABASE_KEY`, `RESTAURANT_ID` | all tables |
+| `TELEGRAM_BOT_TOKEN`, `TELEGRAM_OWNER_CHAT_ID` | owner alerts and reports |
+| `GOOGLE_API_KEY`, `GOOGLE_PLACE_ID` | review monitor (Google Places) |
 
-## Tech stack
-- **AI** — Claude Haiku via OpenRouter (3.5 in this snapshot; 4.5 in the current version — 3.5 was retired 2026-07)
-- **Vector DB** — ChromaDB with all-MiniLM-L6-v2 embeddings
-- **Search** — Hybrid semantic + keyword (70/30)
-- **Backend** — FastAPI + uvicorn on port 8001
-- **Database** — Supabase PostgreSQL
-- **Security** — HMAC-SHA256 webhook verification, slowapi rate limiting, prompt injection blocking
-- **Automation** — n8n workflows for reminders, broadcasts, review monitoring
-- **Messaging** — Meta WhatsApp Cloud API
+## Limits
 
-## Eval score (retrieval-only, no LLM — re-run 2026-08-25)
-RESULTS: 10/10 passed
-SCORE:   100%
-AVG RETRIEVAL SCORE: 0.6464
+- Not deployed. No real guest traffic has gone through it.
+- The system prompt and review responder are written for one demo restaurant. Using it for another restaurant means editing `agents/system_prompt.md`, `data/menu.json` and the name in `automations/review_responder.py`.
+- The schedules for reminders, broadcasts and review checks are described in code comments, but this repo ships no scheduler configuration.
+- Review replies are drafts only. Posting to Google needs the Business Profile API with owner OAuth, which is not built.
 
-## File structure
-restaurant-bot/
-├── agents/          # bot.py, api.py, system_prompt.md
-├── automations/     # broadcast.py, reviews.py, review_monitor.py, review_responder.py, reports.py
-├── reservations/    # booking.py, availability.py, waitlist.py, reminders.py
-├── rag/             # indexer.py, retriever.py, cache.py
-├── data/            # menu.json (25 items, 46 indexed docs)
-└── tests/           # eval.py (10 gold standard questions)
+## License
 
-## Pricing (for clients, May 2026)
-- **Setup:** €2,500 (one-time)
-- **Monthly retainer:** €400/month
-- Includes: WhatsApp integration, menu RAG setup, Supabase tables, n8n workflows, owner Telegram dashboard
-
-## Built by
-[sherrybuilds-studio](https://github.com/sherrybuilds-studio) — Berlin-based AI automation developer
+MIT
