@@ -3,16 +3,17 @@ import requests
 from datetime import datetime, timedelta
 from supabase import create_client
 
+from restaurant import RESTAURANT_ID, load_restaurant
+
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
-RESTAURANT_ID = os.getenv("RESTAURANT_ID", "demo-restaurant")
 WHATSAPP_TOKEN = os.getenv("WHATSAPP_TOKEN")
 WHATSAPP_PHONE_ID = os.getenv("WHATSAPP_PHONE_ID")
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 TELEGRAM_OWNER_CHAT_ID = os.getenv("TELEGRAM_OWNER_CHAT_ID")
 
 AVERAGE_SPEND_PER_COVER = 35.0
-RESTAURANT_NAME = "Demo Restaurant Berlin"
+RESTAURANT = load_restaurant()
 
 _supabase = None
 
@@ -193,13 +194,13 @@ def generate_broadcast_report():
         revenue_estimate = bookings * 2.5 * AVERAGE_SPEND_PER_COVER  # avg 2.5 covers per booking
 
         report = (
-            f"📣 *Broadcast-Bericht — {yesterday}*\n\n"
+            f"📣 *Broadcast-Bericht {RESTAURANT.name} — {yesterday}*\n\n"
             f"📤 *Gesendet:* {sent} Nachrichten\n"
             f"💬 *Antworten:* {replies} ({reply_rate:.1f}%)\n"
             f"📅 *Buchungen:* {bookings} ({booking_rate:.1f}%)\n"
             f"🏷️ *Rabatt angeboten:* {discount}%\n"
             f"💶 *Geschätzter Umsatz:* €{revenue_estimate:,.0f}\n\n"
-            f"_Ihr Demo Restaurant Bot_ 🚀"
+            f"_Ihr Assistent_ 🚀"
         )
 
         return _send_telegram(report)

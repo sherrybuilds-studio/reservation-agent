@@ -2,10 +2,11 @@ import os
 from datetime import datetime, timedelta
 from supabase import create_client
 
+from restaurant import RESTAURANT_ID, load_restaurant
+
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
-RESTAURANT_ID = os.getenv("RESTAURANT_ID", "demo-restaurant")
-RESTAURANT_CAPACITY = 60
+RESTAURANT_CAPACITY = load_restaurant().capacity
 
 # Time slots offered (24h format strings)
 TIME_SLOTS = [

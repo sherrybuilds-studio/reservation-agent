@@ -3,12 +3,13 @@ import requests
 from datetime import datetime, timedelta
 from supabase import create_client
 
+from restaurant import RESTAURANT_ID, load_restaurant
+
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
-RESTAURANT_ID = os.getenv("RESTAURANT_ID", "demo-restaurant")
 WHATSAPP_TOKEN = os.getenv("WHATSAPP_TOKEN")
 WHATSAPP_PHONE_ID = os.getenv("WHATSAPP_PHONE_ID")
-GOOGLE_REVIEW_LINK = "https://example.com/reviews"
+RESTAURANT = load_restaurant()
 
 _supabase = None
 
@@ -74,7 +75,7 @@ def send_reminder_24h():
 
             message = (
                 f"Hallo {res['customer_name']}! 🍽️\n"
-                f"Erinnerung: Ihr Tisch für {res['party_size']} Personen morgen um {res['time']} Uhr im Demo Restaurant Berlin.\n"
+                f"Erinnerung: Ihr Tisch für {res['party_size']} Personen morgen um {res['time']} Uhr im {RESTAURANT.name}.\n"
                 f"Antworten Sie mit JA zur Bestätigung oder NEIN zum Stornieren. Bestätigungsnr.: {res['confirmation_number']}"
             )
 
@@ -128,7 +129,7 @@ def send_reminder_2h():
                 continue
 
             message = (
-                f"Demo Restaurant Berlin erinnert Sie: Ihr Tisch für {res['party_size']} Personen ist heute um {res['time']} Uhr reserviert. 🌟\n"
+                f"{RESTAURANT.name} erinnert Sie: Ihr Tisch für {res['party_size']} Personen ist heute um {res['time']} Uhr reserviert. 🌟\n"
                 f"Wir freuen uns auf Sie, {res['customer_name']}!\n"
                 f"Falls Sie stornieren möchten, antworten Sie bitte mit NEIN. Bestätigungsnr.: {res['confirmation_number']}"
             )
@@ -154,8 +155,8 @@ def send_review_request(phone, name, reservation_id=None):
     """
     try:
         message = (
-            f"Guten Abend, {name}! Wir hoffen, Ihr Abend im Demo Restaurant Berlin war wunderbar. 🌙\n"
-            f"Eine kurze Google-Bewertung (30 Sekunden) bedeutet uns sehr viel: {GOOGLE_REVIEW_LINK}\n"
+            f"Guten Abend, {name}! Wir hoffen, Ihr Abend im {RESTAURANT.name} war wunderbar. 🌙\n"
+            f"Eine kurze Google-Bewertung (30 Sekunden) bedeutet uns sehr viel: {RESTAURANT.review_link}\n"
             f"Herzlichen Dank — wir freuen uns, Sie bald wieder zu sehen!"
         )
 

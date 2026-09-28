@@ -1,17 +1,21 @@
 import os
+import sys
 import requests
 from datetime import datetime, timedelta
 from supabase import create_client
 
+from restaurant import RESTAURANT_ID, load_restaurant
+
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
-RESTAURANT_ID = os.getenv("RESTAURANT_ID", "demo-restaurant")
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
-GOOGLE_PLACE_ID = os.getenv("GOOGLE_PLACE_ID", "demo_place_id")
+# Business Profile location path, "accounts/<account_id>/locations/<location_id>". No default.
+GOOGLE_PLACE_ID = os.getenv("GOOGLE_PLACE_ID")
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 TELEGRAM_OWNER_CHAT_ID = os.getenv("TELEGRAM_OWNER_CHAT_ID")
 
 STAR_EMOJIS = {1: "⭐", 2: "⭐⭐", 3: "⭐⭐⭐", 4: "⭐⭐⭐⭐", 5: "⭐⭐⭐⭐⭐"}
+RESTAURANT = load_restaurant()
 
 _supabase = None
 
@@ -25,6 +29,12 @@ def _get_client():
     return _supabase
 
 
+def missing_settings():
+    """Names of the settings the review check needs but does not have."""
+    settings = {"GOOGLE_API_KEY": GOOGLE_API_KEY, "GOOGLE_PLACE_ID": GOOGLE_PLACE_ID}
+    return [name for name, value in settings.items() if not value]
+
+
 def check_new_reviews():
     """
     Calls Google My Business API to fetch recent reviews.
@@ -34,8 +44,9 @@ def check_new_reviews():
     NOTE: Owner must set GOOGLE_API_KEY and GOOGLE_PLACE_ID in .env.
     API endpoint: https://mybusiness.googleapis.com/v4/accounts/{account}/locations/{location}/reviews
     """
-    if not GOOGLE_API_KEY:
-        print("[review_monitor] GOOGLE_API_KEY not set — skipping review check")
+    missing = missing_settings()
+    if missing:
+        print(f"[review_monitor] {' and '.join(missing)} not set — skipping review check")
         return []
 
     try:
@@ -201,7 +212,7 @@ def generate_weekly_review_report():
             by_stars[r.get("stars", 3)] = by_stars.get(r.get("stars", 3), 0) + 1
 
         report = (
-            f"⭐ *Wochenbericht Bewertungen — Demo Restaurant Berlin*\n\n"
+            f"⭐ *Wochenbericht Bewertungen — {RESTAURANT.name}*\n\n"
             f"📊 *Neue Bewertungen:* {total}\n"
             f"📈 *Durchschnitt:* {avg_stars:.1f} / 5.0\n\n"
             f"5⭐: {by_stars[5]}x\n"
@@ -209,7 +220,7 @@ def generate_weekly_review_report():
             f"3⭐: {by_stars[3]}x\n"
             f"2⭐: {by_stars[2]}x\n"
             f"1⭐: {by_stars[1]}x\n\n"
-            f"_Ihr Demo Restaurant Bot_ 🌟"
+            f"_Ihr Assistent_ 🌟"
         )
 
         _send_telegram(report)
@@ -294,3 +305,13 @@ def _send_telegram(message):
     except Exception as e:
         print(f"[review_monitor] Telegram send error: {e}")
         return False
+
+
+if __name__ == "__main__":
+    missing = missing_settings()
+    if missing:
+        sys.exit(
+            f"review_monitor: {' and '.join(missing)} not set. GOOGLE_PLACE_ID is the Business Profile "
+            "location path, accounts/<account_id>/locations/<location_id>. Nothing was checked."
+        )
+    print(f"[review_monitor] Alerted owner about {run_review_check()} new review(s)")

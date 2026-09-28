@@ -1,10 +1,15 @@
+"""
+Builds the ChromaDB retrieval index from data/menu.json.
+Run from the repo root: python -m rag.indexer
+"""
 import json
 import os
 import shutil
 import chromadb
 from chromadb.utils import embedding_functions
 
-MENU_PATH = os.path.join(os.path.dirname(__file__), "../data/menu.json")
+from restaurant import MENU_PATH, parse_restaurant
+
 CHROMA_PATH = os.path.join(os.path.dirname(__file__), "../chroma_db")
 
 
@@ -19,16 +24,18 @@ def build_documents(menu_data):
     metadatas = []
 
     restaurant = menu_data["restaurant"]
+    identity = parse_restaurant(restaurant)
+    # The FAQ and the other info texts may name the restaurant through {name}, {address}, {email}, ...
+    render = identity.render
 
     # Restaurant info block
     info_text = (
-        f"Restaurant: {restaurant['name']}. {restaurant['tagline']}. "
-        f"Cuisine: {restaurant['cuisine']}. "
-        f"Address: {restaurant['address']['street']}, {restaurant['address']['district']}, {restaurant['address']['city']} {restaurant['address']['postal_code']}. "
-        f"Phone: {restaurant['contact']['phone']}. "
-        f"Email: {restaurant['contact']['email']}. "
-        f"Website: {restaurant['contact']['website']}. "
-        f"Instagram: {restaurant['contact']['instagram']}."
+        f"Restaurant: {identity.name}. {restaurant['tagline']}. "
+        f"Cuisine: {identity.cuisine}. "
+        f"Address: {identity.address}. "
+        f"Phone: {identity.phone}. "
+        f"Email: {identity.email}. "
+        f"Website: {identity.website}."
     )
     docs.append(info_text)
     ids.append("info_restaurant")
@@ -40,7 +47,7 @@ def build_documents(menu_data):
         f"Opening hours for {restaurant['name']}: "
         f"Monday {hours['monday']}, Tuesday {hours['tuesday']}, Wednesday {hours['wednesday']}, "
         f"Thursday {hours['thursday']}, Friday {hours['friday']}, Saturday {hours['saturday']}, Sunday {hours['sunday']}. "
-        f"Kitchen closes {hours['kitchen_closes']}. Note: {hours['note']}."
+        f"Kitchen closes {hours['kitchen_closes']}. Note: {render(hours['note'])}."
     )
     docs.append(hours_text)
     ids.append("info_hours")
@@ -64,7 +71,7 @@ def build_documents(menu_data):
     # Special features
     features_text = (
         f"Special features at {restaurant['name']}: "
-        + " | ".join(restaurant["special_features"])
+        + " | ".join(render(feature) for feature in restaurant["special_features"])
     )
     docs.append(features_text)
     ids.append("info_features")
@@ -81,13 +88,13 @@ def build_documents(menu_data):
     metadatas.append({"type": "payment", "category": "info"})
 
     # Parking / transport
-    docs.append(f"Parking and transport for {restaurant['name']}: {restaurant['parking']}")
+    docs.append(f"Parking and transport for {restaurant['name']}: {render(restaurant['parking'])}")
     ids.append("info_parking")
     metadatas.append({"type": "parking", "category": "info"})
 
     # FAQ entries
     for i, faq in enumerate(menu_data.get("faq", [])):
-        faq_text = f"FAQ — Q: {faq['question']} A: {faq['answer']}"
+        faq_text = f"FAQ — Q: {render(faq['question'])} A: {render(faq['answer'])}"
         docs.append(faq_text)
         ids.append(f"faq_{i:02d}")
         metadatas.append({"type": "faq", "category": "info"})

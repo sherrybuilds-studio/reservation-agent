@@ -9,6 +9,7 @@ from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 
 from agents.bot import process_message, sanitize_input
+from restaurant import load_restaurant
 
 VERIFY_TOKEN = os.getenv("VERIFY_TOKEN")
 WHATSAPP_APP_SECRET = os.getenv("WHATSAPP_APP_SECRET")
@@ -17,7 +18,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(me
 log = logging.getLogger("api")
 
 limiter = Limiter(key_func=get_remote_address)
-app = FastAPI(title="Demo Restaurant Berlin Bot", version="1.0.0")
+app = FastAPI(title=f"{load_restaurant().name} WhatsApp assistant", version="1.0.0")
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
@@ -62,7 +63,7 @@ def _verify_signature(request_body: bytes, signature_header: str):
 
 @app.get("/health")
 async def health():
-    return JSONResponse({"status": "ok", "service": "demo-restaurant-bot", "port": 8001})
+    return JSONResponse({"status": "ok", "service": "reservation-agent"})
 
 
 @app.get("/webhook")

@@ -3,9 +3,10 @@ import requests
 from datetime import datetime, timedelta
 from supabase import create_client
 
+from restaurant import RESTAURANT_ID
+
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
-RESTAURANT_ID = os.getenv("RESTAURANT_ID", "demo-restaurant")
 WHATSAPP_TOKEN = os.getenv("WHATSAPP_TOKEN")
 WHATSAPP_PHONE_ID = os.getenv("WHATSAPP_PHONE_ID")
 

@@ -3,12 +3,13 @@ import requests
 from datetime import datetime, timedelta
 from supabase import create_client
 
+from restaurant import RESTAURANT_ID, load_restaurant
+
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
-RESTAURANT_ID = os.getenv("RESTAURANT_ID", "demo-restaurant")
 WHATSAPP_TOKEN = os.getenv("WHATSAPP_TOKEN")
 WHATSAPP_PHONE_ID = os.getenv("WHATSAPP_PHONE_ID")
-GOOGLE_REVIEW_LINK = "https://example.com/reviews"
+RESTAURANT = load_restaurant()
 
 _supabase = None
 
@@ -53,9 +54,9 @@ def send_review_request(phone, name, reservation_id=None):
     """
     try:
         message = (
-            f"Guten Abend, {name}! Wir hoffen, Ihr Abend bei Demo Restaurant Berlin war unvergesslich. 🌙\n"
-            f"Eine kurze Google-Bewertung bedeutet uns alles — nur 30 Sekunden: {GOOGLE_REVIEW_LINK}\n"
-            f"Herzlichen Dank und bis bald! Das Team vom Demo Restaurant Berlin 🫶"
+            f"Guten Abend, {name}! Wir hoffen, Ihr Abend im {RESTAURANT.name} war unvergesslich. 🌙\n"
+            f"Eine kurze Google-Bewertung bedeutet uns alles — nur 30 Sekunden: {RESTAURANT.review_link}\n"
+            f"Herzlichen Dank und bis bald! Das Team vom {RESTAURANT.name} 🫶"
         )
 
         success = _send_whatsapp(phone, message)

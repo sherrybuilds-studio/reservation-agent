@@ -1,10 +1,12 @@
 import os
 import requests
 
+from restaurant import load_restaurant
+
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
 MODEL = "anthropic/claude-3.5-haiku"
-RESTAURANT_NAME = "Demo Restaurant Berlin"
+RESTAURANT = load_restaurant()
 
 
 def draft_response(review_text, star_rating):
@@ -70,7 +72,7 @@ def _tone_for_rating(stars):
 
 
 def _build_prompt(review_text, stars, tone_instruction):
-    return f"""You are writing a Google review response on behalf of {RESTAURANT_NAME}, a premium Turkish restaurant in Berlin Mitte.
+    return f"""You are writing a Google review response on behalf of {RESTAURANT.name}, a {RESTAURANT.cuisine} restaurant in {RESTAURANT.city}.
 
 RULES:
 - Language: German. Always German, regardless of the review language.
@@ -78,7 +80,7 @@ RULES:
 - Length: 3-5 sentences maximum. Concise and genuine.
 - Never use generic phrases like "Dear Guest" (use "Liebe/r [Name]" if name was in the review, otherwise "Liebe Gäste").
 - Never promise specific compensation in a public reply.
-- Sign off as: "Herzliche Grüße, das Team vom {RESTAURANT_NAME}"
+- Sign off as: "Herzliche Grüße, das Team vom {RESTAURANT.name}"
 
 REVIEW ({stars} stars):
 {review_text if review_text else "(No text provided — just a star rating)"}
@@ -96,8 +98,8 @@ def _call_openrouter(prompt):
     headers = {
         "Authorization": f"Bearer {OPENROUTER_API_KEY}",
         "Content-Type": "application/json",
-        "HTTP-Referer": "https://example.com",
-        "X-Title": "Demo Restaurant Berlin Review Responder"
+        "HTTP-Referer": RESTAURANT.website,
+        "X-Title": f"{RESTAURANT.name} review responder"
     }
     payload = {
         "model": MODEL,
@@ -115,20 +117,23 @@ def _call_openrouter(prompt):
 
 def _fallback_response(stars):
     """Returns a safe canned response if the API call fails."""
+    signature = f"Herzliche Grüße, das Team vom {RESTAURANT.name}"
     if stars <= 2:
         return (
             "Vielen Dank für Ihr Feedback. Es tut uns sehr leid, dass Ihr Besuch nicht Ihren Erwartungen entsprach. "
-            "Bitte kontaktieren Sie uns direkt unter +49 30 000 0000, damit wir die Situation persönlich besprechen können. "
-            "Herzliche Grüße, das Team vom Demo Restaurant Berlin"
+            f"Bitte kontaktieren Sie uns direkt unter {RESTAURANT.phone}, "
+            "damit wir die Situation persönlich besprechen können. "
+            f"{signature}"
         )
     if stars == 3:
         return (
-            "Vielen Dank für Ihre ehrliche Bewertung! Wir nehmen Ihr Feedback sehr ernst und arbeiten kontinuierlich daran, uns zu verbessern. "
+            "Vielen Dank für Ihre ehrliche Bewertung! Wir nehmen Ihr Feedback sehr ernst "
+            "und arbeiten kontinuierlich daran, uns zu verbessern. "
             "Wir würden uns freuen, Sie bald wieder bei uns begrüßen zu dürfen. "
-            "Herzliche Grüße, das Team vom Demo Restaurant Berlin"
+            f"{signature}"
         )
     return (
         "Herzlichen Dank für Ihre wunderbare Bewertung! Es freut uns sehr, dass Sie einen schönen Abend bei uns hatten. "
         "Wir freuen uns schon auf Ihren nächsten Besuch! "
-        "Herzliche Grüße, das Team vom Demo Restaurant Berlin"
+        f"{signature}"
     )

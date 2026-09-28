@@ -1,23 +1,21 @@
 {
   "restaurant": {
+    "_note": "Fictional demo identity. Replace this block to adapt the bot to a real restaurant; see restaurant.py.",
     "name": "Demo Restaurant Berlin",
-    "tagline": "Authentische türkische Küche im Herzen Berlins",
+    "tagline": "Authentische türkische Küche in Berlin",
     "cuisine": "Turkish",
     "address": {
       "street": "Musterstraße 1",
-      "district": "Mitte",
+      "postal_code": "10115",
       "city": "Berlin",
-      "postal_code": "10119",
-      "country": "Germany",
-      "google_maps": "https://example.com/map"
+      "country": "Germany"
     },
     "contact": {
       "phone": "+49 30 000 0000",
-      "whatsapp": "+49 30 000 0000",
       "email": "reservations@example.com",
-      "website": "https://example.com",
-      "instagram": "@demo_restaurant"
+      "website": "https://example.com"
     },
+    "review_link": "https://example.com/reviews",
     "opening_hours": {
       "monday": "17:00–23:00",
       "tuesday": "17:00–23:00",
@@ -52,8 +50,7 @@
       "service_charge": "Not included — at guest's discretion",
       "currency": "EUR"
     },
-    "parking": "Public parking available at Parkhaus Musterstraße, 3 minute walk. Tram M8/M10 stop directly outside.",
-    "google_review_link": "https://example.com/reviews"
+    "parking": "Public car park a 3 minute walk away. Tram and bus stops nearby."
   },
   "menu": {
     "starters": [
@@ -276,7 +273,7 @@
         "id": "M10",
         "name": "Mixed Grill Platte",
         "name_de": "Gemischter Grilleller",
-        "description": "For two: Adana kebab, Tavuk şiş, köfte, lamb chop, grilled vegetables, rice, and salad. The full Demo Restaurant experience.",
+        "description": "For two: Adana kebab, Tavuk şiş, köfte, lamb chop, grilled vegetables, rice, and salad.",
         "description_de": "Für zwei: Adana Kebab, Tavuk Şiş, Köfte, Lammkotelette, gegrilltes Gemüse, Reis und Salat.",
         "price": 52.00,
         "serves": 2,
@@ -521,8 +518,7 @@
     "private_events": {
       "available": true,
       "capacity": 20,
-      "description": "Private dining room available for birthdays, corporate events, and celebrations. Set menus from €45 per person.",
-      "contact": "events@example.com"
+      "description": "Private dining room available for birthdays, corporate events, and celebrations. Set menus from €45 per person."
     }
   },
   "faq": [
@@ -544,11 +540,11 @@
     },
     {
       "question": "Is there parking?",
-      "answer": "Public parking is available at Parkhaus Musterstraße, a 3 minute walk. Tram M8/M10 stop is directly outside the restaurant."
+      "answer": "Yes. A public car park is a 3 minute walk away, and tram and bus stops are close to the restaurant."
     },
     {
       "question": "Do you offer group menus?",
-      "answer": "Yes. For groups of 8 or more, we recommend our set menus starting at €35 per person. Contact us at events@example.com."
+      "answer": "Yes. For groups of 8 or more, we recommend our set menus starting at €35 per person. Contact us at {email}."
     },
     {
       "question": "What happens if the restaurant is fully booked?",
@@ -556,7 +552,7 @@
     },
     {
       "question": "Where are you located?",
-      "answer": "Demo Restaurant Berlin is located at Musterstraße 1, Berlin Mitte, 10115. We are in the heart of Mitte, directly on the tram M8/M10 stop. Public parking at Parkhaus Musterstraße is a 3-minute walk."
+      "answer": "{name} is at {address}. Tram and bus stops are close by, and a public car park is a 3-minute walk away."
     }
   ]
 }

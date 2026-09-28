@@ -1,7 +1,7 @@
 """
-Eval suite for Demo Restaurant Berlin bot.
-Tests retrieval quality directly (no Supabase or WhatsApp needed).
-Run from the repo root: python -m tests.eval
+Retrieval eval: gold questions against the ChromaDB index built from data/menu.json.
+Tests retrieval quality directly (no LLM, Supabase or WhatsApp needed).
+Run from the repo root, after python -m rag.indexer: python -m tests.eval
 """
 import sys
 
@@ -84,7 +84,7 @@ TESTS = [
         "id": 10,
         "name": "Location and transport",
         "query": "Where are you located and how do I get there?",
-        "must_contain": ["musterstra", "mitte"],
+        "must_contain": ["musterstra", "10115"],
         "must_not_contain": [],
         "category": None
     }
@@ -118,7 +118,7 @@ def run_test(test):
 
 def main():
     print("=" * 60)
-    print("DEMO RESTAURANT BERLIN — RAG EVAL SUITE")
+    print("RETRIEVAL EVAL — gold questions")
     print("=" * 60)
     print()
 

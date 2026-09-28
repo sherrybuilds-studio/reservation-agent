@@ -11,6 +11,7 @@ from reservations.booking import create_reservation, get_customer, get_reservati
 from reservations.availability import check_availability
 from reservations.waitlist import add_to_waitlist
 from reservations.reminders import process_reminder_reply
+from restaurant import load_restaurant
 
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
@@ -18,6 +19,7 @@ MODEL = "anthropic/claude-3.5-haiku"
 MAX_HISTORY = 10  # messages per phone number kept in memory
 
 SYSTEM_PROMPT_PATH = Path(__file__).parent / "system_prompt.md"
+RESTAURANT = load_restaurant()
 
 # In-memory conversation history: { phone: [{"role": ..., "content": ...}] }
 _conversations = {}
@@ -27,11 +29,14 @@ _pending_reservations = {}
 
 
 def _load_system_prompt():
+    """Reads the prompt template, drops <!-- notes --> and fills in the restaurant's details."""
     try:
-        return SYSTEM_PROMPT_PATH.read_text(encoding="utf-8")
+        template = SYSTEM_PROMPT_PATH.read_text(encoding="utf-8")
+        template = re.sub(r"<!--.*?-->\s*", "", template, flags=re.DOTALL)
+        return RESTAURANT.render(template)
     except Exception as e:
         print(f"[bot] Failed to load system prompt: {e}")
-        return "You are a helpful restaurant assistant for Demo Restaurant Berlin."
+        return f"You are a helpful restaurant assistant for {RESTAURANT.name}."
 
 
 _system_prompt = _load_system_prompt()
@@ -235,7 +240,7 @@ def _handle_reservation_flow(phone, message, intent):
     except Exception as e:
         print(f"[bot] Reservation creation error: {e}")
         _pending_reservations.pop(phone, None)
-        return "Entschuldigung, es gab einen technischen Fehler. Bitte rufen Sie uns direkt an: +49 30 000 0000."
+        return f"Entschuldigung, es gab einen technischen Fehler. Bitte rufen Sie uns direkt an: {RESTAURANT.phone}."
 
 
 def _build_llm_messages(phone, user_message, context):
@@ -267,8 +272,8 @@ def _call_openrouter(messages):
     headers = {
         "Authorization": f"Bearer {OPENROUTER_API_KEY}",
         "Content-Type": "application/json",
-        "HTTP-Referer": "https://example.com",
-        "X-Title": "Demo Restaurant Berlin Bot"
+        "HTTP-Referer": RESTAURANT.website,
+        "X-Title": f"{RESTAURANT.name} assistant"
     }
 
     # Estimate token budget: keep under 600 tokens for response
@@ -345,7 +350,7 @@ def process_message(phone, message_text):
         print(f"[bot] process_message error for {phone}: {e}")
         return (
             "Entschuldigung, ich habe gerade einen technischen Moment. "
-            "Bitte versuchen Sie es erneut oder rufen Sie uns an: +49 30 000 0000. 🙏"
+            f"Bitte versuchen Sie es erneut oder rufen Sie uns an: {RESTAURANT.phone}. 🙏"
         )
 
 
@@ -369,7 +374,7 @@ def clear_conversation(phone):
 
 
 if __name__ == "__main__":
-    print("Demo Restaurant Berlin Bot — local test mode")
+    print(f"{RESTAURANT.name} assistant — local test mode")
     print("Type your message and press Enter. 'quit' to exit.\n")
     test_phone = "49301234567"
     while True:

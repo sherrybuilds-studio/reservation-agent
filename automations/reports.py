@@ -3,13 +3,15 @@ import requests
 from datetime import datetime, timedelta
 from supabase import create_client
 
+from restaurant import RESTAURANT_ID, load_restaurant
+
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
-RESTAURANT_ID = os.getenv("RESTAURANT_ID", "demo-restaurant")
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 TELEGRAM_OWNER_CHAT_ID = os.getenv("TELEGRAM_OWNER_CHAT_ID")
 
 AVERAGE_SPEND_PER_COVER = 35.0  # EUR — used for revenue estimates
+RESTAURANT = load_restaurant()
 
 _supabase = None
 
@@ -93,17 +95,17 @@ def generate_daily_report(target_date=None):
 
         # Build report
         report = (
-            f"📊 *Tagesbericht Demo Restaurant Berlin*\n"
+            f"📊 *Tagesbericht {RESTAURANT.name}*\n"
             f"_{day_name}_\n\n"
             f"🍽️ *Reservierungen heute:* {len(confirmed)}\n"
-            f"👥 *Covers:* {total_covers} / 60\n"
+            f"👥 *Covers:* {total_covers} / {RESTAURANT.capacity}\n"
             f"💶 *Umsatzschätzung:* €{revenue_estimate:,.0f}\n\n"
             f"❌ *Stornierungen:* {len(cancelled)} ({cancelled_covers} covers)\n"
             f"🚫 *No-Shows:* {len(no_shows)} ({no_show_covers} covers)\n\n"
             f"💬 *Bot-Anfragen:* {questions_asked}\n"
             f"📅 *Online-Buchungen:* {bookings_made}\n"
             f"⭐ *Bewertungsanfragen gesendet:* {reviews_sent}\n\n"
-            f"_Gute Nacht! Ihr Demo Restaurant Bot_ 🌙"
+            f"_Gute Nacht! Ihr Assistent_ 🌙"
         )
 
         return _send_telegram(report)
@@ -161,7 +163,7 @@ def generate_weekly_report():
         total_reviews = sum(r.get("reviews_sent", 0) for r in (analytics.data or []))
 
         report = (
-            f"📈 *Wochenbericht Demo Restaurant Berlin*\n"
+            f"📈 *Wochenbericht {RESTAURANT.name}*\n"
             f"_{week_start.strftime('%d.%m')} – {today.strftime('%d.%m.%Y')}_\n\n"
             f"🍽️ *Reservierungen:* {len(confirmed)}\n"
             f"👥 *Covers gesamt:* {total_covers}\n"
@@ -171,7 +173,7 @@ def generate_weekly_report():
             f"💬 *Bot-Anfragen gesamt:* {total_questions}\n"
             f"📅 *Online-Buchungen:* {total_bookings}\n"
             f"⭐ *Bewertungsanfragen:* {total_reviews}\n\n"
-            f"_Gute Woche! Ihr Demo Restaurant Bot_ 🌟"
+            f"_Gute Woche! Ihr Assistent_ 🌟"
         )
 
         return _send_telegram(report)
