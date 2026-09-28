@@ -1,5 +1,20 @@
-venv/
+# Python
 __pycache__/
 *.pyc
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+
+# Secrets and local settings
 .env
+.env.*
+!.env.example
+
+# Built or written at runtime
 chroma_db/
+rag/cache.json
+
+# Local assistant notes and settings, not part of the project
+CLAUDE.md
+.claude/
