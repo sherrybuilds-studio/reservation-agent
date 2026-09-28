@@ -1,22 +1,9 @@
-# Core
-fastapi==0.115.5
-uvicorn[standard]==0.32.1
-python-dotenv==1.0.1
-
-# AI + RAG
-openai==1.54.3
-sentence-transformers==3.3.1
-chromadb==0.5.23
-
-# Database
-supabase==2.9.1
-
-# HTTP
-requests==2.32.3
-httpx==0.27.2
-
-# Rate limiting
-slowapi==0.1.9
-
-# Utilities
-python-multipart==0.0.17
+# Runtime dependencies: the third-party packages the code imports.
+# Tested on Python 3.12 (see .github/workflows/ci.yml).
+fastapi==0.115.5               # agents/api.py webhook
+uvicorn[standard]==0.32.1      # serves agents/api.py
+slowapi==0.1.9                 # webhook rate limits
+requests==2.32.3               # WhatsApp, Telegram, OpenRouter and Google calls
+supabase==2.9.1                # reservations, customers, waitlist and logs
+chromadb==0.5.23               # retrieval index (rag/)
+sentence-transformers==3.3.1   # all-MiniLM-L6-v2 embeddings (rag/)

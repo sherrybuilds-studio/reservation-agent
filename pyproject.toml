@@ -1,0 +1,14 @@
+# Tool settings only. The code runs from a checkout (python -m ...); it is not
+# an installable package.
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+
+[tool.ruff.lint]
+# Explicit list, so newer ruff releases with wider defaults give the same result.
+select = ["E", "W", "F", "I", "B", "UP"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
