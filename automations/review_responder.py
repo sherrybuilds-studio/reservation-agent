@@ -1,4 +1,5 @@
 import os
+
 import requests
 
 from restaurant import load_restaurant
@@ -72,7 +73,8 @@ def _tone_for_rating(stars):
 
 
 def _build_prompt(review_text, stars, tone_instruction):
-    return f"""You are writing a Google review response on behalf of {RESTAURANT.name}, a {RESTAURANT.cuisine} restaurant in {RESTAURANT.city}.
+    restaurant = f"{RESTAURANT.name}, a {RESTAURANT.cuisine} restaurant in {RESTAURANT.city}"
+    return f"""You are writing a Google review response on behalf of {restaurant}.
 
 RULES:
 - Language: German. Always German, regardless of the review language.
@@ -133,7 +135,8 @@ def _fallback_response(stars):
             f"{signature}"
         )
     return (
-        "Herzlichen Dank für Ihre wunderbare Bewertung! Es freut uns sehr, dass Sie einen schönen Abend bei uns hatten. "
+        "Herzlichen Dank für Ihre wunderbare Bewertung! "
+        "Es freut uns sehr, dass Sie einen schönen Abend bei uns hatten. "
         "Wir freuen uns schon auf Ihren nächsten Besuch! "
         f"{signature}"
     )

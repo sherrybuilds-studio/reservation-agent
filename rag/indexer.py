@@ -5,6 +5,7 @@ Run from the repo root: python -m rag.indexer
 import json
 import os
 import shutil
+
 import chromadb
 from chromadb.utils import embedding_functions
 
@@ -14,7 +15,7 @@ CHROMA_PATH = os.path.join(os.path.dirname(__file__), "../chroma_db")
 
 
 def load_menu():
-    with open(MENU_PATH, "r", encoding="utf-8") as f:
+    with open(MENU_PATH, encoding="utf-8") as f:
         return json.load(f)
 
 
@@ -46,7 +47,8 @@ def build_documents(menu_data):
     hours_text = (
         f"Opening hours for {restaurant['name']}: "
         f"Monday {hours['monday']}, Tuesday {hours['tuesday']}, Wednesday {hours['wednesday']}, "
-        f"Thursday {hours['thursday']}, Friday {hours['friday']}, Saturday {hours['saturday']}, Sunday {hours['sunday']}. "
+        f"Thursday {hours['thursday']}, Friday {hours['friday']}, "
+        f"Saturday {hours['saturday']}, Sunday {hours['sunday']}. "
         f"Kitchen closes {hours['kitchen_closes']}. Note: {render(hours['note'])}."
     )
     docs.append(hours_text)
@@ -199,8 +201,8 @@ def build_index():
         collection.add(documents=batch_docs, ids=batch_ids, metadatas=batch_meta)
         print(f"  → Indexed {min(i + batch_size, len(docs))}/{len(docs)}")
 
-    print(f"\nIndex built successfully.")
-    print(f"  Collection: restaurant_knowledge")
+    print("\nIndex built successfully.")
+    print("  Collection: restaurant_knowledge")
     print(f"  Documents:  {collection.count()}")
     print(f"  Path:       {CHROMA_PATH}")
 

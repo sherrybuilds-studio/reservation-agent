@@ -1,6 +1,7 @@
 import os
-import requests
 from datetime import datetime, timedelta
+
+import requests
 from supabase import create_client
 
 from restaurant import RESTAURANT_ID
@@ -126,7 +127,14 @@ def remove_from_waitlist(waitlist_id=None, phone=None, date=None, time=None):
         if waitlist_id:
             client.table("waitlist").update({"status": "removed"}).eq("id", waitlist_id).execute()
         elif phone and date and time:
-            client.table("waitlist").update({"status": "removed"}).eq("phone", phone).eq("date", str(date)).eq("time", str(time)).execute()
+            (
+                client.table("waitlist")
+                .update({"status": "removed"})
+                .eq("phone", phone)
+                .eq("date", str(date))
+                .eq("time", str(time))
+                .execute()
+            )
 
         print(f"[waitlist] Removed from waitlist — id={waitlist_id} phone={phone}")
 

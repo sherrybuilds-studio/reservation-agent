@@ -1,6 +1,7 @@
 import os
-import requests
 from datetime import datetime, timedelta
+
+import requests
 from supabase import create_client
 
 from restaurant import RESTAURANT_ID, load_restaurant
@@ -75,8 +76,10 @@ def send_reminder_24h():
 
             message = (
                 f"Hallo {res['customer_name']}! 🍽️\n"
-                f"Erinnerung: Ihr Tisch für {res['party_size']} Personen morgen um {res['time']} Uhr im {RESTAURANT.name}.\n"
-                f"Antworten Sie mit JA zur Bestätigung oder NEIN zum Stornieren. Bestätigungsnr.: {res['confirmation_number']}"
+                f"Erinnerung: Ihr Tisch für {res['party_size']} Personen morgen um {res['time']} Uhr "
+                f"im {RESTAURANT.name}.\n"
+                "Antworten Sie mit JA zur Bestätigung oder NEIN zum Stornieren. "
+                f"Bestätigungsnr.: {res['confirmation_number']}"
             )
 
             if _send_whatsapp(res["phone"], message):
@@ -129,9 +132,11 @@ def send_reminder_2h():
                 continue
 
             message = (
-                f"{RESTAURANT.name} erinnert Sie: Ihr Tisch für {res['party_size']} Personen ist heute um {res['time']} Uhr reserviert. 🌟\n"
+                f"{RESTAURANT.name} erinnert Sie: Ihr Tisch für {res['party_size']} Personen "
+                f"ist heute um {res['time']} Uhr reserviert. 🌟\n"
                 f"Wir freuen uns auf Sie, {res['customer_name']}!\n"
-                f"Falls Sie stornieren möchten, antworten Sie bitte mit NEIN. Bestätigungsnr.: {res['confirmation_number']}"
+                "Falls Sie stornieren möchten, antworten Sie bitte mit NEIN. "
+                f"Bestätigungsnr.: {res['confirmation_number']}"
             )
 
             if _send_whatsapp(res["phone"], message):

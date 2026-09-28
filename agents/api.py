@@ -1,12 +1,13 @@
-import os
-import hmac
 import hashlib
+import hmac
 import logging
-from fastapi import FastAPI, Request, HTTPException, Depends
-from fastapi.responses import PlainTextResponse, JSONResponse
+import os
+
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import JSONResponse, PlainTextResponse
 from slowapi import Limiter, _rate_limit_exceeded_handler
-from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
+from slowapi.util import get_remote_address
 
 from agents.bot import process_message, sanitize_input
 from restaurant import load_restaurant
@@ -93,7 +94,7 @@ async def receive_message(request: Request):
     try:
         data = await request.json()
     except Exception:
-        raise HTTPException(status_code=400, detail="Invalid JSON")
+        raise HTTPException(status_code=400, detail="Invalid JSON") from None
 
     try:
         entry = data.get("entry", [{}])[0]

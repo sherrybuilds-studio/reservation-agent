@@ -1,6 +1,7 @@
 import json
 import os
 import time
+
 from sentence_transformers import SentenceTransformer, util
 
 CACHE_PATH = os.path.join(os.path.dirname(__file__), "cache.json")
@@ -21,7 +22,7 @@ def _load_cache():
     global _cache_entries
     if os.path.exists(CACHE_PATH):
         try:
-            with open(CACHE_PATH, "r", encoding="utf-8") as f:
+            with open(CACHE_PATH, encoding="utf-8") as f:
                 raw = json.load(f)
             # Re-hydrate embeddings as lists (stored as lists in JSON)
             _cache_entries = raw

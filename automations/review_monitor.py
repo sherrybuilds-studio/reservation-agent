@@ -1,7 +1,8 @@
 import os
 import sys
-import requests
 from datetime import datetime, timedelta
+
+import requests
 from supabase import create_client
 
 from restaurant import RESTAURANT_ID, load_restaurant

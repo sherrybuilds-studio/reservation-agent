@@ -1,5 +1,6 @@
 import os
 import re
+
 import chromadb
 from chromadb.utils import embedding_functions
 
@@ -61,7 +62,7 @@ def retrieve(query, n_results=3, category_filter=None):
         distances = results["distances"][0]
 
         combined = []
-        for doc, meta, dist in zip(documents, metadatas, distances):
+        for doc, meta, dist in zip(documents, metadatas, distances, strict=True):
             # ChromaDB cosine distance → similarity (0=identical, 2=opposite)
             semantic_sim = 1 - (dist / 2)
             kw_sim = keyword_score(query, doc)

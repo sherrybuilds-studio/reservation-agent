@@ -2,6 +2,7 @@ import os
 import random
 import string
 from datetime import datetime
+
 from supabase import create_client
 
 from restaurant import RESTAURANT_ID
@@ -51,7 +52,10 @@ def create_reservation(customer_name, phone, party_size, date, time, notes=""):
 
         if result.data:
             record = result.data[0]
-            print(f"[booking] Created reservation {confirmation_number} for {customer_name} — {date} {time}, party {party_size}")
+            print(
+                f"[booking] Created reservation {confirmation_number} for {customer_name} — "
+                f"{date} {time}, party {party_size}"
+            )
             _upsert_customer(phone, customer_name)
             return {
                 "success": True,
@@ -181,7 +185,12 @@ def mark_no_show(confirmation_number):
         client = _get_client()
         res = client.table("reservations").select("phone").eq("confirmation_number", confirmation_number).execute()
 
-        client.table("reservations").update({"status": "no_show"}).eq("confirmation_number", confirmation_number).execute()
+        (
+            client.table("reservations")
+            .update({"status": "no_show"})
+            .eq("confirmation_number", confirmation_number)
+            .execute()
+        )
 
         if res.data:
             phone = res.data[0]["phone"]

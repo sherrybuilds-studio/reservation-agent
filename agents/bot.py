@@ -1,16 +1,16 @@
 import os
 import re
-import json
-import requests
 from datetime import datetime
 from pathlib import Path
 
-from rag.retriever import retrieve_for_prompt
+import requests
+
 from rag.cache import cache_lookup, cache_store
-from reservations.booking import create_reservation, get_customer, get_reservation
+from rag.retriever import retrieve_for_prompt
 from reservations.availability import check_availability
-from reservations.waitlist import add_to_waitlist
+from reservations.booking import create_reservation, get_customer
 from reservations.reminders import process_reminder_reply
+from reservations.waitlist import add_to_waitlist
 from restaurant import load_restaurant
 
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
@@ -71,7 +71,9 @@ def detect_intent(message):
     if any(w in msg for w in cancellation_words):
         return "cancellation"
 
-    complaint_words = ["beschwerde", "schlecht", "enttäuscht", "problem", "complaint", "terrible", "awful", "disgusting"]
+    complaint_words = [
+        "beschwerde", "schlecht", "enttäuscht", "problem", "complaint", "terrible", "awful", "disgusting"
+    ]
     if any(w in msg for w in complaint_words):
         return "complaint"
 
@@ -222,7 +224,8 @@ def _handle_reservation_flow(phone, message, intent):
 
             date_fmt = datetime.strptime(state["date"], "%Y-%m-%d").strftime("%A, %d. %B %Y")
             return (
-                f"Perfekt! Ihr Tisch für {state['party_size']} Personen am {date_fmt} um {state['time']} Uhr ist reserviert. ✅\n"
+                f"Perfekt! Ihr Tisch für {state['party_size']} Personen am {date_fmt} um {state['time']} Uhr "
+                "ist reserviert. ✅\n"
                 f"Name: {state['name']} | Bestätigungsnr.: {res['confirmation_number']}\n"
                 f"Wir freuen uns auf Sie! Sie erhalten 24h vorher eine Erinnerung."
             )
@@ -251,7 +254,10 @@ def _build_llm_messages(phone, user_message, context):
     customer = get_customer(phone)
     customer_note = ""
     if customer and customer.get("visit_count", 0) > 1:
-        customer_note = f"\n\n[SYSTEM NOTE: Returning customer. Name: {customer['name']}, visits: {customer['visit_count']}, preferences: {customer.get('preferences', 'none known')}]"
+        customer_note = (
+            f"\n\n[SYSTEM NOTE: Returning customer. Name: {customer['name']}, visits: {customer['visit_count']}, "
+            f"preferences: {customer.get('preferences', 'none known')}]"
+        )
 
     system = _system_prompt + customer_note
     if context:
