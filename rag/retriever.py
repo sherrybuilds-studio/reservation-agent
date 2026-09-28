@@ -1,9 +1,6 @@
 import os
 import re
 
-import chromadb
-from chromadb.utils import embedding_functions
-
 CHROMA_PATH = os.path.join(os.path.dirname(__file__), "../chroma_db")
 
 _client = None
@@ -14,6 +11,10 @@ _ef = None
 def _get_collection():
     global _client, _collection, _ef
     if _collection is None:
+        # Imported on first use, like the model in rag/cache.py: chromadb and torch are slow to import.
+        import chromadb
+        from chromadb.utils import embedding_functions
+
         _ef = embedding_functions.SentenceTransformerEmbeddingFunction(
             model_name="all-MiniLM-L6-v2"
         )

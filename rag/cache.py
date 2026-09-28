@@ -2,8 +2,6 @@ import json
 import os
 import time
 
-from sentence_transformers import SentenceTransformer, util
-
 CACHE_PATH = os.path.join(os.path.dirname(__file__), "cache.json")
 SIMILARITY_THRESHOLD = 0.95
 
@@ -14,6 +12,9 @@ _cache_entries = []  # list of {query, embedding, response, timestamp}
 def _get_model():
     global _model
     if _model is None:
+        # Imported on first use: sentence-transformers pulls in torch, which takes seconds.
+        from sentence_transformers import SentenceTransformer
+
         _model = SentenceTransformer("all-MiniLM-L6-v2")
     return _model
 
@@ -57,6 +58,8 @@ def cache_lookup(query):
         return None
 
     try:
+        from sentence_transformers import util
+
         model = _get_model()
         query_emb = model.encode(query, convert_to_tensor=True)
 
