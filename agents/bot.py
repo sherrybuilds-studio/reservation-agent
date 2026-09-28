@@ -233,7 +233,7 @@ def _handle_reservation_flow(phone, message, intent):
             add_to_waitlist(phone, state["name"], state["party_size"], state["date"], state["time"])
             return (
                 f"Leider ist dieser Termin bereits ausgebucht. Ich habe Sie auf die Warteliste gesetzt! 📋\n"
-                f"Sobald ein Tisch frei wird, benachrichtige ich Sie sofort.{next_slot and ' ' + next_slot or ''}\n"
+                f"Sobald ein Tisch frei wird, benachrichtige ich Sie sofort.{next_text}\n"
                 f"Möchten Sie lieber direkt einen anderen Termin wählen?"
             )
 
