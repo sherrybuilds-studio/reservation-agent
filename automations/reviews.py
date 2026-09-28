@@ -84,7 +84,7 @@ def send_review_request(phone, name, reservation_id=None):
 
 def run_post_visit_reviews():
     """
-    Called by n8n every 30 minutes.
+    Meant to run every 30 minutes.
     Finds reservations that ended ~2 hours ago and haven't received a review request yet.
     """
     try:

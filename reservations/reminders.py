@@ -53,7 +53,7 @@ def _send_whatsapp(phone, message):
 
 def send_reminder_24h():
     """
-    Called by n8n daily. Sends 24h reminder to all reservations for tomorrow.
+    Meant to run once a day. Sends 24h reminder to all reservations for tomorrow.
     Marks reminder_24h_sent = true on each record.
     """
     try:
@@ -98,7 +98,7 @@ def send_reminder_24h():
 
 def send_reminder_2h():
     """
-    Called by n8n every hour. Sends 2h reminder to reservations without 24h reply.
+    Meant to run every hour. Sends 2h reminder to reservations without 24h reply.
     Targets reservations starting in the next 2–3 hour window.
     """
     try:
@@ -156,7 +156,7 @@ def send_reminder_2h():
 def send_review_request(phone, name, reservation_id=None):
     """
     Sends a Google review request 2 hours after the reservation time.
-    Called by n8n or automations/reviews.py.
+    automations/reviews.py has a variant that also counts the request in analytics.
     """
     try:
         message = (

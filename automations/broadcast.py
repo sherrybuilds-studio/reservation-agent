@@ -110,7 +110,7 @@ def send_tonight_special(discount_percent=20):
     """
     Pre-built 'fill empty nights' broadcast.
     Sends German WhatsApp to all customers from last 90 days.
-    Designed for Tuesday/Wednesday 5pm trigger via n8n.
+    Meant for a Tuesday or Wednesday run at 17:00.
     """
     message = (
         f"Guten Abend! Heute Abend haben wir noch Tische frei 🍽️\n"
@@ -164,7 +164,7 @@ def track_broadcast_result(phone, action):
 def generate_broadcast_report():
     """
     Sends a Telegram summary to the owner the morning after a broadcast.
-    Called by n8n at 09:00 the following day.
+    Meant to run at 09:00 the day after a broadcast.
     """
     try:
         client = _get_client()

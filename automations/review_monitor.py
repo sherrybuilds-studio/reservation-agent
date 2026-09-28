@@ -162,7 +162,7 @@ def send_review_alert(review):
 
 def run_review_check():
     """
-    Main entry point. Called by n8n every 30 minutes.
+    Main entry point, meant to run every 30 minutes.
     Checks for new reviews and alerts owner for each one found.
     """
     new_reviews = check_new_reviews()

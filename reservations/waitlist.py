@@ -144,7 +144,7 @@ def remove_from_waitlist(waitlist_id=None, phone=None, date=None, time=None):
 
 def expire_stale_notifications():
     """
-    Called periodically (by n8n every 5 mins).
+    Meant to run every 5 minutes.
     If a notified customer didn't confirm within CONFIRM_WINDOW_MINUTES,
     moves them to 'expired' and notifies the next person on the waitlist.
     """

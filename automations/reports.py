@@ -51,7 +51,7 @@ def _send_telegram(message):
 def generate_daily_report(target_date=None):
     """
     Generates and sends a daily summary report via Telegram.
-    Called by n8n at 22:00 each evening.
+    Meant to run at 22:00 each evening.
     target_date: datetime.date object or None (defaults to today)
     """
     try:
