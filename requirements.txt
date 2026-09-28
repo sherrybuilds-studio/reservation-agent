@@ -7,3 +7,7 @@ requests==2.32.3               # WhatsApp, Telegram, OpenRouter and Google calls
 supabase==2.9.1                # reservations, customers, waitlist and logs
 chromadb==0.5.23               # retrieval index (rag/)
 sentence-transformers==3.3.1   # all-MiniLM-L6-v2 embeddings (rag/)
+
+# Compatibility pin, not imported directly: chromadb 0.5.23 allows any posthog
+# but calls the pre-6 API, which logs "Failed to send telemetry event" errors.
+posthog<6
