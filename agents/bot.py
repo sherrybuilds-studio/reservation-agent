@@ -1,11 +1,4 @@
-import sys
 import os
-
-# Ensure our project root takes precedence over any globally installed packages
-# that share module names (e.g. another-project/rag/ shadows our rag/ package).
-_project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-sys.path = [_project_root] + [p for p in sys.path if "another-project" not in p]
-
 import re
 import json
 import requests

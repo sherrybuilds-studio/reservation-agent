@@ -1,15 +1,9 @@
 """
 Eval suite for Demo Restaurant Berlin bot.
 Tests retrieval quality directly (no Supabase or WhatsApp needed).
-Run: python3 tests/eval.py
+Run from the repo root: python -m tests.eval
 """
 import sys
-import os
-
-# Insert our project root at position 0 AND remove another-project from path
-# to prevent it shadowing our local rag/ package
-_project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-sys.path = [_project_root] + [p for p in sys.path if "another-project" not in p]
 
 from rag.retriever import retrieve
 
