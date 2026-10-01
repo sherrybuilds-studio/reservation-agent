@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 import requests
 from supabase import create_client
 
+import clock
 from restaurant import RESTAURANT_ID, load_restaurant
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
@@ -58,7 +59,7 @@ def send_reminder_24h():
     """
     try:
         client = _get_client()
-        tomorrow = (datetime.utcnow() + timedelta(days=1)).strftime("%Y-%m-%d")
+        tomorrow = (clock.utc_now() + timedelta(days=1)).strftime("%Y-%m-%d")
 
         reservations = (
             client.table("reservations")
@@ -103,7 +104,7 @@ def send_reminder_2h():
     """
     try:
         client = _get_client()
-        now = datetime.utcnow()
+        now = clock.utc_now()
         today = now.strftime("%Y-%m-%d")
 
         # Get all of today's confirmed reservations that haven't had the 2h reminder yet
@@ -194,7 +195,7 @@ def process_reminder_reply(phone, reply_text):
         client = _get_client()
 
         # Find most recent upcoming confirmed reservation for this phone
-        today = datetime.utcnow().strftime("%Y-%m-%d")
+        today = clock.utc_now().strftime("%Y-%m-%d")
         result = (
             client.table("reservations")
             .select("*")

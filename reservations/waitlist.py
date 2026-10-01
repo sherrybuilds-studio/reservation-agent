@@ -1,9 +1,10 @@
 import os
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 import requests
 from supabase import create_client
 
+import clock
 from restaurant import RESTAURANT_ID
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
@@ -58,7 +59,7 @@ def add_to_waitlist(phone, name, party_size, date, time):
             "time": str(time),
             "status": "waiting",
             "notified_at": None,
-            "created_at": datetime.utcnow().isoformat()
+            "created_at": clock.utc_now().isoformat()
         }
 
         result = client.table("waitlist").insert(data).execute()
@@ -102,10 +103,10 @@ def notify_waitlist(date, time, party_size):
         _send_waitlist_notification(candidate)
 
         # Mark as notified
-        expires_at = (datetime.utcnow() + timedelta(minutes=CONFIRM_WINDOW_MINUTES)).isoformat()
+        expires_at = (clock.utc_now() + timedelta(minutes=CONFIRM_WINDOW_MINUTES)).isoformat()
         client.table("waitlist").update({
             "status": "notified",
-            "notified_at": datetime.utcnow().isoformat(),
+            "notified_at": clock.utc_now().isoformat(),
             "expires_at": expires_at
         }).eq("id", candidate["id"]).execute()
 
@@ -150,7 +151,7 @@ def expire_stale_notifications():
     """
     try:
         client = _get_client()
-        now = datetime.utcnow().isoformat()
+        now = clock.utc_now().isoformat()
 
         stale = (
             client.table("waitlist")

@@ -1,10 +1,11 @@
 import os
 import sys
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 import requests
 from supabase import create_client
 
+import clock
 from restaurant import RESTAURANT_ID, load_restaurant
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
@@ -106,7 +107,7 @@ def _normalise_review(raw):
         "reviewer_name": reviewer.get("displayName", "Anonymous"),
         "stars": stars,
         "text": raw.get("comment", "").strip(),
-        "time": raw.get("updateTime", datetime.utcnow().isoformat()),
+        "time": raw.get("updateTime", clock.utc_now().isoformat()),
         "reply": raw.get("reviewReply", {}).get("comment", "")
     }
 
@@ -191,7 +192,7 @@ def generate_weekly_review_report():
     """
     try:
         client = _get_client()
-        since = (datetime.utcnow() - timedelta(days=7)).isoformat()
+        since = (clock.utc_now() - timedelta(days=7)).isoformat()
 
         result = (
             client.table("review_log")
@@ -257,7 +258,7 @@ def _mark_review_seen(review):
             "stars": review["stars"],
             "text": review["text"][:500],
             "received_at": review["time"],
-            "alerted_at": datetime.utcnow().isoformat()
+            "alerted_at": clock.utc_now().isoformat()
         }).execute()
     except Exception as e:
         print(f"[review_monitor] _mark_review_seen error (non-fatal): {e}")
@@ -267,7 +268,7 @@ def _update_weekly_stats(reviews):
     """Updates running star-count stats in analytics table."""
     try:
         client = _get_client()
-        today = datetime.utcnow().strftime("%Y-%m-%d")
+        today = clock.utc_now().strftime("%Y-%m-%d")
 
         for review in reviews:
             stars = review.get("stars", 0)

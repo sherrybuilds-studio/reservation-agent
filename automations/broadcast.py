@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 import requests
 from supabase import create_client
 
+import clock
 from restaurant import RESTAURANT_ID, load_restaurant
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
@@ -36,7 +37,7 @@ def get_past_customers(days=90, slow_days_only=False):
     """
     try:
         client = _get_client()
-        since = (datetime.utcnow() - timedelta(days=days)).isoformat()
+        since = (clock.utc_now() - timedelta(days=days)).isoformat()
 
         result = (
             client.table("customers")
@@ -79,7 +80,7 @@ def send_broadcast(message_text, discount_percent=20, customers=None):
         print("[broadcast] No customers to broadcast to")
         return None
 
-    broadcast_id = f"BC-{datetime.utcnow().strftime('%Y%m%d%H%M')}"
+    broadcast_id = f"BC-{clock.utc_now().strftime('%Y%m%d%H%M')}"
     sent_count = 0
     failed_count = 0
     sent_phones = []
@@ -128,7 +129,7 @@ def track_broadcast_result(phone, action):
     """
     try:
         client = _get_client()
-        today = datetime.utcnow().strftime("%Y-%m-%d")
+        today = clock.utc_now().strftime("%Y-%m-%d")
 
         # Find today's broadcast log
         result = (
@@ -168,7 +169,7 @@ def generate_broadcast_report():
     """
     try:
         client = _get_client()
-        yesterday = (datetime.utcnow() - timedelta(days=1)).strftime("%Y-%m-%d")
+        yesterday = (clock.utc_now() - timedelta(days=1)).strftime("%Y-%m-%d")
 
         result = (
             client.table("broadcast_log")
@@ -271,7 +272,7 @@ def _log_broadcast(broadcast_id, sent_count, failed_count, sent_phones, discount
         client.table("broadcast_log").insert({
             "restaurant_id": RESTAURANT_ID,
             "broadcast_id": broadcast_id,
-            "sent_at": datetime.utcnow().isoformat(),
+            "sent_at": clock.utc_now().isoformat(),
             "sent_count": sent_count,
             "failed_count": failed_count,
             "reply_count": 0,

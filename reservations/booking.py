@@ -1,10 +1,10 @@
 import os
 import random
 import string
-from datetime import datetime
 
 from supabase import create_client
 
+import clock
 from restaurant import RESTAURANT_ID
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
@@ -152,7 +152,7 @@ def _upsert_customer(phone, name):
             record = existing.data[0]
             client.table("customers").update({
                 "visit_count": record.get("visit_count", 0) + 1,
-                "last_visit": datetime.utcnow().isoformat(),
+                "last_visit": clock.utc_now().isoformat(),
                 "name": name
             }).eq("phone", phone).execute()
         else:
@@ -160,7 +160,7 @@ def _upsert_customer(phone, name):
                 "phone": phone,
                 "name": name,
                 "visit_count": 1,
-                "last_visit": datetime.utcnow().isoformat(),
+                "last_visit": clock.utc_now().isoformat(),
                 "no_show_count": 0
             }).execute()
 

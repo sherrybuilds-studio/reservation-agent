@@ -4,6 +4,7 @@ from datetime import datetime
 import requests
 from supabase import create_client
 
+import clock
 from restaurant import RESTAURANT_ID, load_restaurant
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
@@ -67,7 +68,7 @@ def send_review_request(phone, name, reservation_id=None):
                 client = _get_client()
                 client.table("reservations").update({
                     "review_request_sent": True,
-                    "review_request_sent_at": datetime.utcnow().isoformat()
+                    "review_request_sent_at": clock.utc_now().isoformat()
                 }).eq("id", reservation_id).execute()
             except Exception as e:
                 print(f"[reviews] Failed to update review_request_sent flag: {e}")
@@ -89,7 +90,7 @@ def run_post_visit_reviews():
     """
     try:
         client = _get_client()
-        now = datetime.utcnow()
+        now = clock.utc_now()
         today = now.strftime("%Y-%m-%d")
 
         reservations = (
@@ -132,7 +133,7 @@ def _log_review_sent(phone, name, reservation_id):
     """Logs review request to analytics table."""
     try:
         client = _get_client()
-        today = datetime.utcnow().strftime("%Y-%m-%d")
+        today = clock.utc_now().strftime("%Y-%m-%d")
 
         existing = (
             client.table("analytics")
