@@ -11,7 +11,7 @@ from rag.retriever import retrieve_for_prompt
 from reservations.availability import check_availability, german_date
 from reservations.booking import create_reservation, get_customer
 from reservations.reminders import parse_yes_no, process_reminder_reply
-from reservations.waitlist import add_to_waitlist
+from reservations.waitlist import add_to_waitlist, find_open_offer, notify_waitlist, set_waitlist_status
 from restaurant import load_restaurant
 
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
@@ -186,6 +186,42 @@ def _extract_reservation_details(message):
     return details
 
 
+def _booking_confirmation(name, party_size, date, time, confirmation_number):
+    date_fmt = german_date(datetime.strptime(date, "%Y-%m-%d"), with_year=True)
+    return (
+        f"Perfekt! Ihr Tisch für {party_size} Personen am {date_fmt} um {time} Uhr ist reserviert. ✅\n"
+        f"Name: {name} | Bestätigungsnr.: {confirmation_number}\n"
+        "Wir freuen uns auf Sie! Sie erhalten 24h vorher eine Erinnerung."
+    )
+
+
+def _answer_waitlist_offer(phone, offer, answer):
+    """The guest answered "a table is free" inside the confirm window: book it, or pass it on."""
+    if answer == "no":
+        set_waitlist_status(offer["id"], "declined")
+        notify_waitlist(offer["date"], offer["time"], offer["party_size"])
+        return "Alles klar, dann geben wir den Tisch weiter. Vielleicht klappt es beim nächsten Mal! 🙏"
+
+    avail = check_availability(offer["date"], offer["time"], offer["party_size"])
+    if not avail["available"]:
+        set_waitlist_status(offer["id"], "waiting")
+        return (
+            "Leider ist der Tisch inzwischen wieder vergeben. Sie bleiben auf der Warteliste "
+            "und hören von mir, sobald etwas frei wird."
+        )
+
+    res = create_reservation(
+        customer_name=offer["name"],
+        phone=phone,
+        party_size=offer["party_size"],
+        date=offer["date"],
+        time=offer["time"]
+    )
+    set_waitlist_status(offer["id"], "booked")
+    return _booking_confirmation(offer["name"], offer["party_size"], offer["date"], offer["time"],
+                                 res["confirmation_number"])
+
+
 def _handle_reservation_flow(phone, message, intent):
     """
     State machine for multi-turn reservation collection.
@@ -193,8 +229,13 @@ def _handle_reservation_flow(phone, message, intent):
     """
     state = _pending_reservations.get(phone, {})
 
-    # If customer is confirming/denying a reminder — handle immediately
+    # A yes/no reply: first to a waitlist offer whose confirm window is open, else to a reminder
     if intent == "confirmation":
+        answer = parse_yes_no(message)
+        offer = find_open_offer(phone) if answer else None
+        if offer:
+            return _answer_waitlist_offer(phone, offer, answer)
+
         result = process_reminder_reply(phone, message)
         if result == "confirmed":
             return "Wunderbar! Ihre Reservierung ist bestätigt. Wir freuen uns sehr auf Sie heute Abend! 🍽️"
@@ -256,14 +297,8 @@ def _handle_reservation_flow(phone, message, intent):
             )
             # Clear pending state
             _pending_reservations.pop(phone, None)
-
-            date_fmt = german_date(datetime.strptime(state["date"], "%Y-%m-%d"), with_year=True)
-            return (
-                f"Perfekt! Ihr Tisch für {state['party_size']} Personen am {date_fmt} um {state['time']} Uhr "
-                "ist reserviert. ✅\n"
-                f"Name: {state['name']} | Bestätigungsnr.: {res['confirmation_number']}\n"
-                f"Wir freuen uns auf Sie! Sie erhalten 24h vorher eine Erinnerung."
-            )
+            return _booking_confirmation(state["name"], state["party_size"], state["date"], state["time"],
+                                         res["confirmation_number"])
 
         next_slot = avail.get("next_available")
         next_text = f" Der nächste freie Tisch wäre: {next_slot}." if next_slot else ""

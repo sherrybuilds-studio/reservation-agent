@@ -91,3 +91,36 @@ def test_expiry_job_only_touches_this_restaurant(db):
 
     # Another restaurant's offer is its own job's business, and its free table is not ours to offer.
     assert _statuses(db) == {"Other": "notified", "Dana": "waiting"}
+
+
+def _offer(name, phone, minutes_left):
+    """A guest who was told a table is free, with minutes_left of the confirm window (negative: expired)."""
+    now = _utcnow()
+    return _entry(name, 2, "2026-09-30T10:05:00", phone=phone, status="notified",
+                  notified_at=(now - timedelta(minutes=15 - minutes_left)).isoformat(),
+                  expires_at=(now + timedelta(minutes=minutes_left)).isoformat())
+
+
+def test_ja_inside_the_window_books_the_offered_table(db, bot, offline_llm, frozen_today):
+    db.seed("waitlist", _offer("Cem", "491700000005", minutes_left=10), _offer("Eva", "491700000006", minutes_left=-2))
+
+    reply = bot.process_message("491700000005", "JA")
+
+    assert "RES-" in reply and "am Freitag, 2. Oktober 2026 um 20:00 Uhr" in reply
+    [booking] = db.rows("reservations")
+    assert (booking["customer_name"], booking["date"], booking["time"]) == ("Cem", DATE, TIME)
+    assert offline_llm.llm == []  # answered by the booking logic, not left to the LLM
+
+    # Eva's window has closed: her JA books nothing; the expiry job passes her offer on.
+    bot.process_message("491700000006", "JA")
+    assert len(db.rows("reservations")) == 1
+    assert _statuses(db) == {"Cem": "booked", "Eva": "notified"}
+
+
+def test_nein_passes_the_offer_to_the_next_guest(db, bot, offline_llm, frozen_today):
+    db.seed("waitlist", _offer("Cem", "491700000005", minutes_left=10), _entry("Dana", 2, "2026-09-30T10:10:00"))
+
+    bot.process_message("491700000005", "Nein danke")
+
+    assert _statuses(db) == {"Cem": "declined", "Dana": "notified"}
+    assert db.rows("reservations") == []

@@ -118,6 +118,35 @@ def notify_waitlist(date, time, party_size):
         return None
 
 
+def find_open_offer(phone):
+    """
+    The waitlist entry this guest was offered a table for, if the confirm
+    window is still open; otherwise None.
+    """
+    try:
+        client = _get_client()
+        result = (
+            client.table("waitlist")
+            .select("*")
+            .eq("restaurant_id", RESTAURANT_ID)
+            .eq("phone", phone)
+            .eq("status", "notified")
+            .gte("expires_at", clock.utc_now().isoformat())
+            .order("notified_at", desc=True)
+            .limit(1)
+            .execute()
+        )
+        return result.data[0] if result.data else None
+    except Exception as e:
+        print(f"[waitlist] find_open_offer error: {e}")
+        return None
+
+
+def set_waitlist_status(entry_id, status):
+    """Marks an answered offer 'booked' or 'declined', or puts the guest back to 'waiting'."""
+    _get_client().table("waitlist").update({"status": status}).eq("id", entry_id).execute()
+
+
 def remove_from_waitlist(waitlist_id=None, phone=None, date=None, time=None):
     """
     Removes a person from the waitlist (after they confirm a booking, or decline).
