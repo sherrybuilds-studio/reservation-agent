@@ -16,7 +16,19 @@ TIME_SLOTS = [
     "20:00", "20:30", "21:00", "21:30", "22:00"
 ]
 
+_WEEKDAYS_DE = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"]
+_MONTHS_DE = [
+    "Januar", "Februar", "März", "April", "Mai", "Juni",
+    "Juli", "August", "September", "Oktober", "November", "Dezember",
+]
+
 _supabase = None
+
+
+def german_date(day, with_year=False):
+    """'Freitag, 2. Oktober' for guest replies. strftime would print English names under the default locale."""
+    text = f"{_WEEKDAYS_DE[day.weekday()]}, {day.day}. {_MONTHS_DE[day.month - 1]}"
+    return f"{text} {day.year}" if with_year else text
 
 
 def _get_client():
@@ -104,8 +116,7 @@ def _find_next_available(start_date, start_time, party_size):
 
                 covers_used = _covers_at_slot(check_date_str, slot)
                 if RESTAURANT_CAPACITY - covers_used >= party_size:
-                    day_name = check_date.strftime("%A, %d. %B")
-                    return f"{day_name} um {slot} Uhr"
+                    return f"{german_date(check_date)} um {slot} Uhr"
 
         return None
 

@@ -7,7 +7,7 @@ import requests
 
 from rag.cache import cache_lookup, cache_store
 from rag.retriever import retrieve_for_prompt
-from reservations.availability import check_availability
+from reservations.availability import check_availability, german_date
 from reservations.booking import create_reservation, get_customer
 from reservations.reminders import process_reminder_reply
 from reservations.waitlist import add_to_waitlist
@@ -253,7 +253,7 @@ def _handle_reservation_flow(phone, message, intent):
             # Clear pending state
             _pending_reservations.pop(phone, None)
 
-            date_fmt = datetime.strptime(state["date"], "%Y-%m-%d").strftime("%A, %d. %B %Y")
+            date_fmt = german_date(datetime.strptime(state["date"], "%Y-%m-%d"), with_year=True)
             return (
                 f"Perfekt! Ihr Tisch für {state['party_size']} Personen am {date_fmt} um {state['time']} Uhr "
                 "ist reserviert. ✅\n"

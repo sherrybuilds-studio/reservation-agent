@@ -26,7 +26,7 @@ def test_full_slot_suggests_the_next_free_slot(db):
     db.seed("reservations", _booking(60))
     result = availability.check_availability(FRIDAY, "20:00", 2)
     assert not result["available"]
-    assert result["next_available"].endswith("um 20:30 Uhr")
+    assert result["next_available"] == "Freitag, 2. Oktober um 20:30 Uhr"
 
 
 def test_no_lunch_slots_monday_to_thursday(db):

@@ -25,6 +25,7 @@ def test_reservation_flow_asks_for_the_name_then_books(db, bot, offline_llm, fro
     reply = bot.process_message(GUEST, "Anna Schmidt")
 
     assert "Anna Schmidt" in reply and "RES-" in reply
+    assert "am Freitag, 2. Oktober 2026 um 20:00 Uhr" in reply
     [row] = db.rows("reservations")
     booked = (row["customer_name"], row["party_size"], row["date"], row["time"])
     assert booked == ("Anna Schmidt", 2, "2026-10-02", "20:00")
