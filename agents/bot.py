@@ -260,16 +260,27 @@ def _handle_reservation_flow(phone, message, intent):
                 f"Name: {state['name']} | Bestätigungsnr.: {res['confirmation_number']}\n"
                 f"Wir freuen uns auf Sie! Sie erhalten 24h vorher eine Erinnerung."
             )
-        else:
-            _pending_reservations.pop(phone, None)
-            next_slot = avail.get("next_available")
-            next_text = f" Der nächste freie Tisch wäre: {next_slot}." if next_slot else ""
-            add_to_waitlist(phone, state["name"], state["party_size"], state["date"], state["time"])
+
+        next_slot = avail.get("next_available")
+        next_text = f" Der nächste freie Tisch wäre: {next_slot}." if next_slot else ""
+
+        if avail.get("reason") == "closed":
+            # No bookings at that time at all: keep date, party size and name, ask for another time.
+            asked_time = state.pop("time")
+            _pending_reservations[phone] = state
             return (
-                f"Leider ist dieser Termin bereits ausgebucht. Ich habe Sie auf die Warteliste gesetzt! 📋\n"
-                f"Sobald ein Tisch frei wird, benachrichtige ich Sie sofort.{next_text}\n"
-                f"Möchten Sie lieber direkt einen anderen Termin wählen?"
+                f"Um {asked_time} Uhr nehmen wir an diesem Tag leider keine Reservierungen an.{next_text}\n"
+                "Welche Uhrzeit passt Ihnen stattdessen?"
             )
+
+        # Fully booked: waitlist, plus the nearest free slot as an alternative.
+        _pending_reservations.pop(phone, None)
+        add_to_waitlist(phone, state["name"], state["party_size"], state["date"], state["time"])
+        return (
+            f"Leider ist dieser Termin bereits ausgebucht. Ich habe Sie auf die Warteliste gesetzt! 📋\n"
+            f"Sobald ein Tisch frei wird, benachrichtige ich Sie sofort.{next_text}\n"
+            f"Möchten Sie lieber direkt einen anderen Termin wählen?"
+        )
 
     except Exception as e:
         print(f"[bot] Reservation creation error: {e}")

@@ -43,3 +43,16 @@ def test_full_slot_puts_the_guest_on_the_waitlist(db, bot, offline_llm, frozen_t
     [entry] = db.rows("waitlist")
     assert (entry["name"], entry["party_size"], entry["status"]) == ("Anna Schmidt", 2, "waiting")
     assert len(db.rows("reservations")) == 1  # only the booking that filled the slot
+
+
+def test_closed_time_gets_another_time_instead_of_the_waitlist(db, bot, offline_llm, frozen_today):
+    bot.process_message(GUEST, "Tisch für 2 Personen am Montag um 13 Uhr")  # no lunch service on Mondays
+    reply = bot.process_message(GUEST, "Anna Schmidt")
+
+    assert "Montag, 5. Oktober um 17:00 Uhr" in reply
+    assert db.rows("reservations") == [] and db.rows("waitlist") == []
+
+    # Date, party size and name are kept; a new time completes the booking.
+    assert "RES-" in bot.process_message(GUEST, "Dann um 18 Uhr")
+    [row] = db.rows("reservations")
+    assert (row["date"], row["time"], row["customer_name"]) == ("2026-10-05", "18:00", "Anna Schmidt")

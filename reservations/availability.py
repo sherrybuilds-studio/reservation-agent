@@ -59,21 +59,36 @@ def _covers_at_slot(date, time):
         return 0
 
 
+def _offered_slots(day):
+    """Booking times on that day: no lunch service Monday to Thursday."""
+    if day.weekday() < 4:
+        return [slot for slot in TIME_SLOTS if int(slot.split(":")[0]) >= 17]
+    return list(TIME_SLOTS)
+
+
 def check_availability(date, time, party_size):
     """
     Returns dict:
-      { available: True/False, covers_used: int, capacity: int,
-        next_available: str or None }
-    next_available is set only when available=False.
+      { available: True/False, reason: None | "closed" | "full", covers_used: int,
+        remaining: int, capacity: int, next_available: str or None }
+    reason "closed" means no booking is taken at that time at all (not one of
+    TIME_SLOTS, or lunch Monday to Thursday). next_available is set only when
+    available=False.
     """
     try:
         party_size = int(party_size)
+        if str(time) not in _offered_slots(datetime.strptime(str(date), "%Y-%m-%d")):
+            return {"available": False, "reason": "closed", "covers_used": 0, "remaining": 0,
+                    "capacity": RESTAURANT_CAPACITY,
+                    "next_available": _find_next_available(date, time, party_size)}
+
         covers_used = _covers_at_slot(date, time)
         remaining = RESTAURANT_CAPACITY - covers_used
         available = remaining >= party_size
 
         result = {
             "available": available,
+            "reason": None if available else "full",
             "covers_used": covers_used,
             "remaining": remaining,
             "capacity": RESTAURANT_CAPACITY,
@@ -88,7 +103,7 @@ def check_availability(date, time, party_size):
     except Exception as e:
         print(f"[availability] check_availability error: {e}")
         # Fail open so the bot can still take reservations if Supabase is down
-        return {"available": True, "covers_used": 0, "remaining": RESTAURANT_CAPACITY,
+        return {"available": True, "reason": None, "covers_used": 0, "remaining": RESTAURANT_CAPACITY,
                 "capacity": RESTAURANT_CAPACITY, "next_available": None}
 
 
@@ -103,13 +118,8 @@ def _find_next_available(start_date, start_time, party_size):
         for day_offset in range(0, 8):
             check_date = base + timedelta(days=day_offset)
             check_date_str = check_date.strftime("%Y-%m-%d")
-            weekday = check_date.weekday()  # 0=Mon … 6=Sun
 
-            for slot in TIME_SLOTS:
-                # Skip lunch slots Mon-Thu (restaurant only opens at 17:00 those days)
-                slot_hour = int(slot.split(":")[0])
-                if weekday < 4 and slot_hour < 17:
-                    continue
+            for slot in _offered_slots(check_date):
                 # Skip the original slot on day 0
                 if day_offset == 0 and slot <= start_time:
                     continue
@@ -129,14 +139,9 @@ def get_available_slots(date, party_size):
     """Returns a list of available time slots for a given date and party size."""
     try:
         party_size = int(party_size)
-        date_obj = datetime.strptime(str(date), "%Y-%m-%d")
-        weekday = date_obj.weekday()
         available_slots = []
 
-        for slot in TIME_SLOTS:
-            slot_hour = int(slot.split(":")[0])
-            if weekday < 4 and slot_hour < 17:
-                continue
+        for slot in _offered_slots(datetime.strptime(str(date), "%Y-%m-%d")):
             covers_used = _covers_at_slot(date, slot)
             if RESTAURANT_CAPACITY - covers_used >= party_size:
                 available_slots.append(slot)
