@@ -86,7 +86,7 @@ def get_reservation(confirmation_number=None, phone=None):
         if confirmation_number:
             query = query.eq("confirmation_number", confirmation_number)
         elif phone:
-            query = query.eq("phone", phone).order("confirmed_at", desc=True).limit(1)
+            query = query.eq("phone", phone).order("created_at", desc=True).limit(1)
         else:
             return None
 

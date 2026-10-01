@@ -1,9 +1,15 @@
+-- Run once in the Supabase SQL editor.
+-- date and time are the restaurant's local date and wall-clock time ("2026-10-02", "20:00");
+-- timestamptz columns are written in UTC.
 create table reservations (
   id uuid default gen_random_uuid() primary key,
   restaurant_id text, customer_name text, phone text,
   party_size int, date text, time text,
   status text default 'confirmed', notes text,
-  confirmation_number text, created_at timestamptz default now()
+  confirmation_number text, created_at timestamptz default now(),
+  customer_confirmed boolean default false,
+  reminder_24h_sent boolean default false, reminder_2h_sent boolean default false,
+  review_request_sent boolean default false, review_request_sent_at timestamptz
 );
 create table customers (
   id uuid default gen_random_uuid() primary key,
@@ -14,7 +20,8 @@ create table waitlist (
   id uuid default gen_random_uuid() primary key,
   restaurant_id text, phone text, name text,
   party_size int, date text, time text,
-  notified_at timestamptz, status text default 'waiting'
+  status text default 'waiting', created_at timestamptz default now(),
+  notified_at timestamptz, expires_at timestamptz
 );
 create table broadcast_log (
   id uuid default gen_random_uuid() primary key,
