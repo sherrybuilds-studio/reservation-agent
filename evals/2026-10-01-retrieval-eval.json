@@ -1,0 +1,11 @@
+{
+  "date": "2026-10-01",
+  "gate": "retrieval: 10 gold questions against the ChromaDB index built from data/menu.json (all-MiniLM-L6-v2, hybrid ranking); offline, no LLM, Supabase or WhatsApp",
+  "passed": 10,
+  "total": 10,
+  "score_pct": 100,
+  "threshold_pct": 100,
+  "avg_retrieval_score": 0.6552,
+  "method": "export ANONYMIZED_TELEMETRY=False; python -m rag.indexer && python -m tests.eval",
+  "commit": "63044cc009129558762c28cd785b048a99f94c43"
+}
