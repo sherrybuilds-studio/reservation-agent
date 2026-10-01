@@ -37,3 +37,13 @@ def test_replies_with_punctuation_or_a_polite_word_count(db, frozen_today):
 
     statuses = {row["phone"]: row["status"] for row in db.rows("reservations")}
     assert statuses == {"guest-a": "confirmed", "guest-b": "cancelled", "guest-c": "confirmed"}
+
+
+def test_a_reply_only_changes_this_restaurants_booking(db, frozen_today):
+    elsewhere = {**_confirmed("guest", "19:00", date="2026-10-01"), "restaurant_id": "another-restaurant"}
+    db.seed("reservations", elsewhere, _confirmed("guest", "20:00", date="2026-10-02"))
+
+    assert reminders.process_reminder_reply("guest", "NEIN") == "cancelled"
+
+    statuses = [(row["restaurant_id"], row["status"]) for row in db.rows("reservations")]
+    assert statuses == [("another-restaurant", "confirmed"), ("demo-restaurant", "cancelled")]

@@ -217,11 +217,12 @@ def process_reminder_reply(phone, reply_text):
             return "unknown"
         client = _get_client()
 
-        # Find most recent upcoming confirmed reservation for this phone
+        # Find this guest's next confirmed reservation at this restaurant
         today = clock.local_now().strftime("%Y-%m-%d")
         result = (
             client.table("reservations")
             .select("*")
+            .eq("restaurant_id", RESTAURANT_ID)
             .eq("phone", phone)
             .eq("status", "confirmed")
             .gte("date", today)
