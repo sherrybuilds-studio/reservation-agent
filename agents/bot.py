@@ -327,18 +327,20 @@ def _handle_reservation_flow(phone, message, intent):
         return f"Entschuldigung, es gab einen technischen Fehler. Bitte rufen Sie uns direkt an: {RESTAURANT.phone}."
 
 
-def _build_llm_messages(phone, user_message, context):
-    """Builds the messages array for the OpenRouter API call."""
-    history = _conversations.get(phone, [])
-
-    # Check for returning customer greeting
+def _returning_customer_note(phone):
+    """System-prompt note with a returning guest's name and history, or "" for a new guest."""
     customer = get_customer(phone)
-    customer_note = ""
     if customer and customer.get("visit_count", 0) > 1:
-        customer_note = (
+        return (
             f"\n\n[SYSTEM NOTE: Returning customer. Name: {customer['name']}, visits: {customer['visit_count']}, "
             f"preferences: {customer.get('preferences', 'none known')}]"
         )
+    return ""
+
+
+def _build_llm_messages(phone, user_message, context, customer_note=""):
+    """Builds the messages array for the OpenRouter API call."""
+    history = _conversations.get(phone, [])
 
     system = _system_prompt + customer_note
     if context:
@@ -401,10 +403,13 @@ def process_message(phone, message_text):
                 _update_history(phone, message_text, reservation_response)
                 return reservation_response
 
-        # 2. Check semantic cache (only for non-in-progress flows)
-        cached = cache_lookup(message_text)
-        if cached:
-            return cached
+        # 2. Semantic cache, only for a guest with no conversation state: a reply written
+        #    for one guest (their name, their booking) must never be served to another.
+        stateless = phone not in _pending_reservations and phone not in _conversations
+        if stateless:
+            cached = cache_lookup(message_text)
+            if cached:
+                return cached
 
         # 3. Detect intent
         intent = detect_intent(message_text)
@@ -421,14 +426,15 @@ def process_message(phone, message_text):
         context = retrieve_for_prompt(message_text, n_results=3)
 
         # 5. Build messages and call LLM
-        messages = _build_llm_messages(phone, message_text, context)
+        customer_note = _returning_customer_note(phone)
+        messages = _build_llm_messages(phone, message_text, context, customer_note)
         response = _call_openrouter(messages)
 
         # 6. Update conversation history
         _update_history(phone, message_text, response)
 
-        # 7. Cache general Q&A responses (not reservation/complaint flows)
-        if intent in ("menu", "general"):
+        # 7. Cache general Q&A replies, only when nothing guest-specific shaped them
+        if intent in ("menu", "general") and stateless and not customer_note:
             cache_store(message_text, response)
 
         return response
