@@ -156,6 +156,7 @@ def expire_stale_notifications():
         stale = (
             client.table("waitlist")
             .select("*")
+            .eq("restaurant_id", RESTAURANT_ID)
             .eq("status", "notified")
             .lt("expires_at", now)
             .execute()

@@ -75,3 +75,19 @@ def test_offer_inside_the_window_is_left_alone(db):
     waitlist.expire_stale_notifications()
 
     assert _statuses(db) == {"Cem": "notified", "Dana": "waiting"}
+
+
+def test_expiry_job_only_touches_this_restaurant(db):
+    now = _utcnow()
+    db.seed(
+        "waitlist",
+        _entry("Other", 2, "2026-09-30T10:00:00", restaurant_id="another-restaurant", status="notified",
+               notified_at=(now - timedelta(minutes=20)).isoformat(),
+               expires_at=(now - timedelta(minutes=5)).isoformat()),
+        _entry("Dana", 2, "2026-09-30T10:10:00"),
+    )
+
+    waitlist.expire_stale_notifications()
+
+    # Another restaurant's offer is its own job's business, and its free table is not ours to offer.
+    assert _statuses(db) == {"Other": "notified", "Dana": "waiting"}
