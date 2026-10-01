@@ -17,6 +17,8 @@ WHATSAPP_APP_SECRET = os.getenv("WHATSAPP_APP_SECRET")
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 log = logging.getLogger("api")
+if not WHATSAPP_APP_SECRET:
+    log.warning("WHATSAPP_APP_SECRET is not set: POST /webhook will answer 503 until it is")
 
 limiter = Limiter(key_func=get_remote_address)
 app = FastAPI(title=f"{load_restaurant().name} WhatsApp assistant", version="1.0.0")
@@ -41,9 +43,10 @@ def _is_injection(text):
 
 
 def _verify_signature(request_body: bytes, signature_header: str):
-    """HMAC-SHA256 verification of WhatsApp webhook payload."""
+    """HMAC-SHA256 verification of WhatsApp webhook payload. Fails closed: no secret, no messages."""
     if not WHATSAPP_APP_SECRET:
-        return  # Skip verification if secret not configured (dev mode)
+        log.error("Refused POST /webhook with 503: WHATSAPP_APP_SECRET is not set, so signatures cannot be checked")
+        raise HTTPException(status_code=503, detail="Webhook signature check is not configured")
 
     if not signature_header or not signature_header.startswith("sha256="):
         raise HTTPException(status_code=403, detail="Missing signature")

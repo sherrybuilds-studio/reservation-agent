@@ -93,7 +93,7 @@ Database: run `setup.sql` once in the Supabase SQL editor.
 | `RESTAURANT_ID` | key for this restaurant's rows in shared tables, default `demo-restaurant` |
 | `WHATSAPP_TOKEN`, `WHATSAPP_PHONE_ID` | sending WhatsApp messages |
 | `VERIFY_TOKEN` | Meta's webhook handshake; without it the handshake always fails |
-| `WHATSAPP_APP_SECRET` | the signature check; without it unsigned requests are accepted, which is only for local testing |
+| `WHATSAPP_APP_SECRET` | the signature check; without it every POST to `/webhook` is refused with 503 |
 | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_OWNER_CHAT_ID` | owner alerts and reports |
 | `GOOGLE_API_KEY`, `GOOGLE_PLACE_ID` | review monitor; no defaults, it checks nothing until both are set |
 

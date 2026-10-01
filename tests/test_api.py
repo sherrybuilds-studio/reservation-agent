@@ -72,11 +72,13 @@ def test_bad_or_missing_signature_is_rejected(client):
     assert client.calls["bot"] == []
 
 
-def test_without_a_secret_unsigned_requests_are_accepted(client, monkeypatch):
-    # Local testing only; the README and .env.example say to set WHATSAPP_APP_SECRET in any deployment.
+def test_without_a_secret_every_post_is_refused(client, monkeypatch):
+    # Fail closed: with no app secret nothing can be verified, so nothing is processed, signed or not.
     monkeypatch.setattr(api, "WHATSAPP_APP_SECRET", None)
-    assert _post(client, _payload(), signature=None).status_code == 200
-    assert len(client.calls["bot"]) == 1
+    body = _payload()
+    assert _post(client, body, signature=None).status_code == 503
+    assert _post(client, body, _signature(body)).status_code == 503
+    assert client.calls["bot"] == []
 
 
 def test_injection_attempt_is_acknowledged_but_never_reaches_the_bot(client):
