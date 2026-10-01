@@ -1,6 +1,6 @@
 import os
 import re
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 
 import requests
@@ -99,66 +99,86 @@ def detect_intent(message):
     return "general"
 
 
+_WEEKDAYS = {
+    "montag": 0, "dienstag": 1, "mittwoch": 2, "donnerstag": 3, "freitag": 4, "samstag": 5, "sonntag": 6,
+    "monday": 0, "tuesday": 1, "wednesday": 2, "thursday": 3, "friday": 4, "saturday": 5, "sunday": 6,
+}
+# German "am" before a day, a time of day or a date means "on": "für 12 am Samstag" is a party of twelve.
+_GERMAN_AM = (
+    r"am\s+(?:montag|dienstag|mittwoch|donnerstag|freitag|samstag|sonntag"
+    r"|wochenende|abend|mittag|nachmittag|vormittag|morgen|\d)"
+)
+_PARTY_WORDS = r"(?:personen|person|persons|pers|people|guests|gäste|gästen|leute|leuten|pax)\b"
+# Tried in order; the first plausible match wins.
+_TIME_PATTERNS = (
+    re.compile(r"\b(\d{1,2})(?:[:.]?(\d{2}))?\s*(?:uhr|h)\b()"),                         # 20 Uhr, 19:30 Uhr, 20h
+    re.compile(rf"\b(\d{{1,2}})(?::(\d{{2}}))?\s*(?!{_GERMAN_AM})(am|pm)\b"),             # 8pm, 7:30 pm, 11 am
+    re.compile(r"\b(?:um|at|gegen)\s+(\d{1,2})(?:[:.](\d{2}))?\b(?!\s*(?:am|pm)\b)()"),  # um 20, um 19:30, at 19:30
+    re.compile(r"\b(\d{1,2}):(\d{2})\b()"),                                                # 19:30
+)
+
+
+def _extract_party_size(text):
+    match = re.search(rf"\b(\d{{1,3}})\s*{_PARTY_WORDS}", text)
+    if match:
+        return int(match.group(1))
+    # "für 4", "for 2", unless the number is a clock time ("für 20 Uhr", "for 8pm")
+    for match in re.finditer(r"\b(?:für|fur|for)\s+(\d{1,2})\b", text):
+        rest = text[match.end():]
+        is_time = re.match(r"\s*(?:[:.]\d|uhr\b|h\b|pm\b)", rest) or (
+            re.match(r"\s*am\b", rest) and not re.match(rf"\s*{_GERMAN_AM}", rest)
+        )
+        if not is_time:
+            return int(match.group(1))
+    return None
+
+
+def _extract_time(text):
+    for pattern in _TIME_PATTERNS:
+        for match in pattern.finditer(text):
+            hour, minute, clock = int(match.group(1)), int(match.group(2) or 0), match.group(3)
+            if clock:  # 12-hour clock
+                if not 1 <= hour <= 12:
+                    continue
+                hour = hour % 12 + (12 if clock == "pm" else 0)
+            if 11 <= hour <= 23 and minute < 60:
+                return f"{hour:02d}:{minute:02d}"
+    return None
+
+
+def _extract_date(text, today):
+    text = re.sub(r"\bguten\s+morgen\b", " ", text)  # a greeting, not "tomorrow"
+    if re.search(r"\b(?:heute|today|tonight)\b", text):
+        return today
+    if re.search(r"\bübermorgen\b", text):
+        return today + timedelta(days=2)
+    if re.search(r"\b(?:morgen|tomorrow)\b", text):
+        return today + timedelta(days=1)
+    for day_name, weekday in _WEEKDAYS.items():
+        if re.search(rf"\b{day_name}", text):
+            return today + timedelta(days=(weekday - today.weekday()) % 7 or 7)  # today's weekday: next week
+    return None
+
+
 def _extract_reservation_details(message):
     """
     Tries to extract date, time, party_size from a natural language message.
     Returns a dict with whatever was found (may be incomplete).
     """
+    text = message.lower()
     details = {}
 
-    # Party size
-    party_match = re.search(r'(\d+)\s*(person|personen|people|guests|gäste|pax)', message.lower())
-    if party_match:
-        details["party_size"] = int(party_match.group(1))
-    else:
-        # Try "für X" pattern
-        fuer_match = re.search(r'f[üu]r\s+(\d+)', message.lower())
-        if fuer_match:
-            details["party_size"] = int(fuer_match.group(1))
+    party_size = _extract_party_size(text)
+    if party_size:
+        details["party_size"] = party_size
 
-    # Time — use findall so the party-size digit ("2 Personen") doesn't
-    # consume the match before we reach the actual time ("20 Uhr").
-    time_matches = re.findall(r'(\d{1,2})[:\.]?(\d{2})?\s*(uhr|pm|am|h\b)', message.lower())
-    for grp in time_matches:
-        hour = int(grp[0])
-        minute = int(grp[1]) if grp[1] else 0
-        if grp[2] == "pm" and hour < 12:
-            hour += 12
-        if 11 <= hour <= 23:
-            details["time"] = f"{hour:02d}:{minute:02d}"
-            break
-    # Fallback: plain hour with no suffix (e.g. "um 20")
-    if "time" not in details:
-        plain = re.findall(r'um\s+(\d{1,2})', message.lower())
-        for h in plain:
-            hour = int(h)
-            if 11 <= hour <= 23:
-                details["time"] = f"{hour:02d}:00"
-                break
+    time = _extract_time(text)
+    if time:
+        details["time"] = time
 
-    # Date — simplified: look for day names or "heute"/"morgen"
-    today = datetime.now()
-    day_map = {
-        "montag": 0, "dienstag": 1, "mittwoch": 2, "donnerstag": 3,
-        "freitag": 4, "samstag": 5, "sonntag": 6,
-        "monday": 0, "tuesday": 1, "wednesday": 2, "thursday": 3,
-        "friday": 4, "saturday": 5, "sunday": 6
-    }
-    msg_lower = message.lower()
-    if "heute" in msg_lower or "today" in msg_lower:
-        details["date"] = today.strftime("%Y-%m-%d")
-    elif "morgen" in msg_lower or "tomorrow" in msg_lower:
-        from datetime import timedelta
-        details["date"] = (today + timedelta(days=1)).strftime("%Y-%m-%d")
-    else:
-        for day_name, day_num in day_map.items():
-            if day_name in msg_lower:
-                days_ahead = (day_num - today.weekday()) % 7
-                if days_ahead == 0:
-                    days_ahead = 7
-                from datetime import timedelta
-                details["date"] = (today + timedelta(days=days_ahead)).strftime("%Y-%m-%d")
-                break
+    day = _extract_date(text, datetime.now())
+    if day:
+        details["date"] = day.strftime("%Y-%m-%d")
 
     return details
 
