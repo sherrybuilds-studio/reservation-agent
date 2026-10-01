@@ -7,6 +7,9 @@ import sys
 
 from rag.retriever import retrieve
 
+# Share of gold questions that must pass; below it the eval exits 1 (CI fails).
+THRESHOLD_PCT = 100
+
 TESTS = [
     {
         "id": 1,
@@ -141,20 +144,20 @@ def main():
             failed += 1
 
     avg_score = sum(scores) / len(scores) if scores else 0
+    score_pct = passed / len(TESTS) * 100
 
     print()
     print("=" * 60)
     print(f"RESULTS: {passed}/{len(TESTS)} passed")
-    print(f"SCORE:   {passed / len(TESTS) * 100:.0f}%")
+    print(f"SCORE:   {score_pct:.0f}% (threshold {THRESHOLD_PCT}%)")
     print(f"AVG RETRIEVAL SCORE: {avg_score:.4f}")
     print("=" * 60)
 
-    if failed > 0:
-        print(f"\n⚠️  {failed} test(s) failed — check ChromaDB index or retriever.")
+    if score_pct < THRESHOLD_PCT:
+        print(f"\n⚠️  {failed} test(s) failed, below the {THRESHOLD_PCT}% threshold. Check the index and retriever.")
         sys.exit(1)
-    else:
-        print("\n🎉 All tests passed!")
-        sys.exit(0)
+    print("\n🎉 All tests passed!")
+    sys.exit(0)
 
 
 if __name__ == "__main__":
