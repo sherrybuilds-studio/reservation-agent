@@ -34,12 +34,10 @@ INJECTION_PATTERNS = [
 ]
 
 
-def _check_injection(text):
-    lowered = text.lower()
-    for pattern in INJECTION_PATTERNS:
-        if pattern in lowered:
-            log.warning(f"Injection attempt blocked: {text[:100]}")
-            raise HTTPException(status_code=400, detail="Invalid input")
+def _is_injection(text):
+    """True if text contains one of INJECTION_PATTERNS, ignoring case and runs of whitespace."""
+    normalised = " ".join(text.lower().split())
+    return any(pattern in normalised for pattern in INJECTION_PATTERNS)
 
 
 def _verify_signature(request_body: bytes, signature_header: str):
@@ -115,10 +113,14 @@ async def receive_message(request: Request):
 
         text = message.get("text", {}).get("body", "")
         text = sanitize_input(text)
-        _check_injection(text)
 
         if not text:
             return JSONResponse({"status": "empty_message"})
+
+        if _is_injection(text):
+            # Still a 200: Meta redelivers every webhook call that does not get one.
+            log.warning(f"Injection attempt blocked from {phone}: {text[:100]}")
+            return JSONResponse({"status": "blocked"})
 
         log.info(f"Processing message from {phone}: {text[:60]}")
         response = process_message(phone, text)
