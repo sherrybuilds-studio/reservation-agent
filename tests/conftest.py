@@ -191,13 +191,8 @@ def offline_llm(monkeypatch, bot):
 
 @pytest.fixture
 def frozen_today(monkeypatch):
-    """Makes the bot's datetime.now() return TODAY."""
-    from agents import bot as bot_module
+    """Sets the restaurant's clock (clock.local_now) to TODAY."""
+    import clock
 
-    class FrozenDatetime(datetime):
-        @classmethod
-        def now(cls, tz=None):
-            return cls(TODAY.year, TODAY.month, TODAY.day, TODAY.hour, TODAY.minute)
-
-    monkeypatch.setattr(bot_module, "datetime", FrozenDatetime)
+    monkeypatch.setattr(clock, "local_now", lambda: TODAY)
     return TODAY.date()

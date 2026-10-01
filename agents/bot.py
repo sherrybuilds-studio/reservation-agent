@@ -5,6 +5,7 @@ from pathlib import Path
 
 import requests
 
+import clock
 from rag.cache import cache_lookup, cache_store
 from rag.retriever import retrieve_for_prompt
 from reservations.availability import check_availability, german_date
@@ -176,7 +177,7 @@ def _extract_reservation_details(message):
     if time:
         details["time"] = time
 
-    day = _extract_date(text, datetime.now())
+    day = _extract_date(text, clock.local_now())
     if day:
         details["date"] = day.strftime("%Y-%m-%d")
 

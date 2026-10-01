@@ -57,7 +57,7 @@ def generate_daily_report(target_date=None):
     """
     try:
         client = _get_client()
-        date = target_date or clock.utc_now().date()
+        date = target_date or clock.local_now().date()
         date_str = str(date)
         day_name = datetime.strptime(date_str, "%Y-%m-%d").strftime("%A, %d. %B %Y")
 
@@ -124,7 +124,7 @@ def generate_weekly_report():
     """
     try:
         client = _get_client()
-        today = clock.utc_now().date()
+        today = clock.local_now().date()
         week_start = today - timedelta(days=7)
         week_start_str = str(week_start)
         week_end_str = str(today)

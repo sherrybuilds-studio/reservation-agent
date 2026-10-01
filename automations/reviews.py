@@ -90,7 +90,7 @@ def run_post_visit_reviews():
     """
     try:
         client = _get_client()
-        now = clock.utc_now()
+        now = clock.local_now()
         today = now.strftime("%Y-%m-%d")
 
         reservations = (
@@ -133,7 +133,7 @@ def _log_review_sent(phone, name, reservation_id):
     """Logs review request to analytics table."""
     try:
         client = _get_client()
-        today = clock.utc_now().strftime("%Y-%m-%d")
+        today = clock.local_now().strftime("%Y-%m-%d")
 
         existing = (
             client.table("analytics")

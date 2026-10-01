@@ -4,6 +4,7 @@
     "name": "Demo Restaurant Berlin",
     "tagline": "Authentische türkische Küche in Berlin",
     "cuisine": "Turkish",
+    "timezone": "Europe/Berlin",
     "address": {
       "street": "Musterstraße 1",
       "postal_code": "10115",

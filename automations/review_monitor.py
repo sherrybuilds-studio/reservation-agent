@@ -268,7 +268,7 @@ def _update_weekly_stats(reviews):
     """Updates running star-count stats in analytics table."""
     try:
         client = _get_client()
-        today = clock.utc_now().strftime("%Y-%m-%d")
+        today = clock.local_now().strftime("%Y-%m-%d")
 
         for review in reviews:
             stars = review.get("stars", 0)

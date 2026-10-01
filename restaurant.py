@@ -30,6 +30,7 @@ _PLACEHOLDER = re.compile(r"\{(\w+)\}")
 class Restaurant:
     name: str
     cuisine: str
+    timezone: str  # IANA name; booking dates and times are wall-clock time here
     street: str
     postal_code: str
     city: str
@@ -82,6 +83,7 @@ def parse_restaurant(block):
     return Restaurant(
         name=block["name"],
         cuisine=block["cuisine"],
+        timezone=block["timezone"],
         street=address["street"],
         postal_code=address["postal_code"],
         city=address["city"],
