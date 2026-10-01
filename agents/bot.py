@@ -48,6 +48,16 @@ def sanitize_input(text):
     return text.strip()[:2000]  # hard cap at 2000 chars
 
 
+def _mentions(text, words, whole_word=False):
+    """
+    True if one of the words starts a word in text ("reservier" matches "Reservierung"),
+    or, with whole_word=True, appears as a whole word. Plain substring matching read
+    "vegetable" as "table" and "now" as "no".
+    """
+    end = r"\b" if whole_word else ""
+    return any(re.search(rf"\b{re.escape(word)}{end}", text) for word in words)
+
+
 def detect_intent(message):
     """
     Lightweight rule-based intent detection before hitting the LLM.
@@ -56,25 +66,26 @@ def detect_intent(message):
     msg = message.lower()
 
     confirmation_words = ["ja", "yes", "nein", "no", "bestätigen", "confirm", "cancel", "stornieren", "evet", "hayir"]
-    if any(w in msg for w in confirmation_words) and len(msg.split()) <= 3:
+    if _mentions(msg, confirmation_words, whole_word=True) and len(msg.split()) <= 3:
         return "confirmation"
+
+    # Before the booking words: "Reservierung stornieren" asks to cancel, not to book.
+    cancellation_words = ["storno", "stornieren", "cancel", "absagen", "abgesagt"]
+    if _mentions(msg, cancellation_words):
+        return "cancellation"
 
     reservation_words = [
         "reservier", "tisch", "buchen", "buchung", "reservat", "book", "table",
         "platz", "plätze", "personen", "persons", "tonight", "heute abend",
         "morgen", "tomorrow", "freitag", "saturday", "sonntag", "friday"
     ]
-    if any(w in msg for w in reservation_words):
+    if _mentions(msg, reservation_words):
         return "reservation"
-
-    cancellation_words = ["storno", "stornieren", "cancel", "absagen", "abgesagt"]
-    if any(w in msg for w in cancellation_words):
-        return "cancellation"
 
     complaint_words = [
         "beschwerde", "schlecht", "enttäuscht", "problem", "complaint", "terrible", "awful", "disgusting"
     ]
-    if any(w in msg for w in complaint_words):
+    if _mentions(msg, complaint_words):
         return "complaint"
 
     menu_words = [
@@ -82,7 +93,7 @@ def detect_intent(message):
         "vegan", "vegetarisch", "vegetarian", "allergen", "gluten", "halal",
         "preis", "price", "kosten", "cost", "was kostet"
     ]
-    if any(w in msg for w in menu_words):
+    if _mentions(msg, menu_words):
         return "menu"
 
     return "general"
