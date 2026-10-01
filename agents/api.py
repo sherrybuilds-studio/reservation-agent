@@ -74,7 +74,8 @@ async def verify_webhook(request: Request):
     token = params.get("hub.verify_token")
     challenge = params.get("hub.challenge")
 
-    if mode == "subscribe" and token == VERIFY_TOKEN:
+    # No configured token means no handshake: an absent hub.verify_token must not equal an absent setting.
+    if mode == "subscribe" and VERIFY_TOKEN and token and hmac.compare_digest(token.encode(), VERIFY_TOKEN.encode()):
         log.info("Webhook verified successfully")
         return PlainTextResponse(challenge)
 

@@ -45,11 +45,15 @@ def _post(client, body, signature=None):
     return client.post("/webhook", content=body, headers=headers)
 
 
-def test_handshake_echoes_the_challenge_only_for_the_right_token(client):
+def test_handshake_echoes_the_challenge_only_for_the_right_token(client, monkeypatch):
     ok = client.get("/webhook", params={"hub.mode": "subscribe", "hub.verify_token": VERIFY, "hub.challenge": "4242"})
     assert ok.status_code == 200 and ok.text == "4242"
     wrong = client.get("/webhook", params={"hub.mode": "subscribe", "hub.verify_token": "nope", "hub.challenge": "1"})
     assert wrong.status_code == 403
+
+    # With no VERIFY_TOKEN configured nothing verifies, including a request that leaves the token out.
+    monkeypatch.setattr(api, "VERIFY_TOKEN", None)
+    assert client.get("/webhook", params={"hub.mode": "subscribe", "hub.challenge": "1"}).status_code == 403
 
 
 def test_signed_message_reaches_the_bot_and_gets_a_reply(client):
