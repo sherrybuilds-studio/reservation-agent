@@ -238,7 +238,7 @@ def _handle_reservation_flow(phone, message, intent):
 
         result = process_reminder_reply(phone, message)
         if result == "confirmed":
-            return "Wunderbar! Ihre Reservierung ist bestätigt. Wir freuen uns sehr auf Sie heute Abend! 🍽️"
+            return "Wunderbar! Ihre Reservierung ist bestätigt. Wir freuen uns sehr auf Ihren Besuch! 🍽️"
         if result == "cancelled":
             return "Schade! Ihre Reservierung wurde storniert. Wir hoffen, Sie bald wiederzusehen. 🙏"
         # Unknown confirmation — fall through to LLM
