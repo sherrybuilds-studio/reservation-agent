@@ -22,3 +22,18 @@ def test_two_hour_reminder_uses_the_restaurants_clock(db, monkeypatch):
 
     assert reminders.send_reminder_2h() == 1
     assert sent == ["in-two-hours"]
+
+
+def test_replies_with_punctuation_or_a_polite_word_count(db, frozen_today):
+    db.seed(
+        "reservations",
+        _confirmed("guest-a", "20:00", date="2026-10-02"),
+        _confirmed("guest-b", "20:00", date="2026-10-02"),
+        _confirmed("guest-c", "20:00", date="2026-10-02"),
+    )
+    assert reminders.process_reminder_reply("guest-a", "Ja!") == "confirmed"
+    assert reminders.process_reminder_reply("guest-b", "Nein, danke") == "cancelled"
+    assert reminders.process_reminder_reply("guest-c", "No vegan options?") == "unknown"  # a question, not an answer
+
+    statuses = {row["phone"]: row["status"] for row in db.rows("reservations")}
+    assert statuses == {"guest-a": "confirmed", "guest-b": "cancelled", "guest-c": "confirmed"}

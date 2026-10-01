@@ -56,3 +56,12 @@ def test_closed_time_gets_another_time_instead_of_the_waitlist(db, bot, offline_
     assert "RES-" in bot.process_message(GUEST, "Dann um 18 Uhr")
     [row] = db.rows("reservations")
     assert (row["date"], row["time"], row["customer_name"]) == ("2026-10-05", "18:00", "Anna Schmidt")
+
+
+def test_yes_or_no_is_not_taken_as_the_guests_name(db, bot, offline_llm, frozen_today):
+    bot.process_message(GUEST, "Tisch für 2 Personen am Freitag um 20 Uhr")
+    bot.process_message(GUEST, "Ja gerne")  # answering a question from the LLM, not giving a name
+    assert db.rows("reservations") == []
+
+    assert "RES-" in bot.process_message(GUEST, "Anna Schmidt")
+    assert db.rows("reservations")[0]["customer_name"] == "Anna Schmidt"

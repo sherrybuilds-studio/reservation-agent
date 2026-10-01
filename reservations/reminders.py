@@ -1,4 +1,5 @@
 import os
+import re
 from datetime import datetime, timedelta
 
 import requests
@@ -13,7 +14,27 @@ WHATSAPP_TOKEN = os.getenv("WHATSAPP_TOKEN")
 WHATSAPP_PHONE_ID = os.getenv("WHATSAPP_PHONE_ID")
 RESTAURANT = load_restaurant()
 
+YES_WORDS = {"ja", "yes", "j", "y", "si", "evet"}
+NO_WORDS = {"nein", "no", "n", "hayir", "hayır"}
+_POLITE_WORDS = {"bitte", "gerne", "danke", "please", "thanks", "thank", "you", "ok", "okay"}
+
 _supabase = None
+
+
+def parse_yes_no(text):
+    """
+    'yes', 'no' or None for a short reply. The first word decides and anything
+    after it must be a polite filler: "Ja!", "Nein, danke" and "Yes please"
+    count, "No vegan options?" does not.
+    """
+    words = re.findall(r"\w+", (text or "").lower())
+    if not words or any(word not in _POLITE_WORDS for word in words[1:]):
+        return None
+    if words[0] in YES_WORDS:
+        return "yes"
+    if words[0] in NO_WORDS:
+        return "no"
+    return None
 
 
 def _get_client():
@@ -191,7 +212,9 @@ def process_reminder_reply(phone, reply_text):
     Returns a status string: 'confirmed', 'cancelled', 'unknown'
     """
     try:
-        reply = reply_text.strip().upper()
+        answer = parse_yes_no(reply_text)
+        if answer is None:
+            return "unknown"
         client = _get_client()
 
         # Find most recent upcoming confirmed reservation for this phone
@@ -212,23 +235,20 @@ def process_reminder_reply(phone, reply_text):
 
         res = result.data[0]
 
-        if reply in ("JA", "YES", "J", "Y", "SI", "EVET"):
+        if answer == "yes":
             client.table("reservations").update(
                 {"status": "confirmed", "customer_confirmed": True}
             ).eq("id", res["id"]).execute()
             print(f"[reminders] {phone} confirmed reservation {res['confirmation_number']}")
             return "confirmed"
 
-        if reply in ("NEIN", "NO", "N", "HAYIR"):
-            client.table("reservations").update({"status": "cancelled"}).eq("id", res["id"]).execute()
-            print(f"[reminders] {phone} cancelled reservation {res['confirmation_number']}")
+        client.table("reservations").update({"status": "cancelled"}).eq("id", res["id"]).execute()
+        print(f"[reminders] {phone} cancelled reservation {res['confirmation_number']}")
 
-            # Trigger waitlist notification for freed slot
-            from reservations.waitlist import notify_waitlist
-            notify_waitlist(res["date"], res["time"], res["party_size"])
-            return "cancelled"
-
-        return "unknown"
+        # Trigger waitlist notification for freed slot
+        from reservations.waitlist import notify_waitlist
+        notify_waitlist(res["date"], res["time"], res["party_size"])
+        return "cancelled"
 
     except Exception as e:
         print(f"[reminders] process_reminder_reply error: {e}")

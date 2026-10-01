@@ -10,7 +10,7 @@ from rag.cache import cache_lookup, cache_store
 from rag.retriever import retrieve_for_prompt
 from reservations.availability import check_availability, german_date
 from reservations.booking import create_reservation, get_customer
-from reservations.reminders import process_reminder_reply
+from reservations.reminders import parse_yes_no, process_reminder_reply
 from reservations.waitlist import add_to_waitlist
 from restaurant import load_restaurant
 
@@ -66,7 +66,9 @@ def detect_intent(message):
     """
     msg = message.lower()
 
-    confirmation_words = ["ja", "yes", "nein", "no", "bestätigen", "confirm", "cancel", "stornieren", "evet", "hayir"]
+    confirmation_words = [
+        "ja", "yes", "nein", "no", "bestätigen", "confirm", "cancel", "stornieren", "evet", "hayir", "hayır"
+    ]
     if _mentions(msg, confirmation_words, whole_word=True) and len(msg.split()) <= 3:
         return "confirmation"
 
@@ -228,6 +230,7 @@ def _handle_reservation_flow(phone, message, intent):
         is_plain_name = (
             1 <= len(candidate.split()) <= 4
             and not re.search(r'\d', candidate)
+            and parse_yes_no(candidate) is None
             and not any(w in candidate.lower() for w in
                         ["tisch", "buchen", "platz", "reservier", "danke", "bitte", "uhr"])
         )
