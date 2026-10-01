@@ -10,7 +10,7 @@ from agents import api
 
 SECRET = "test-app-secret"
 VERIFY = "test-verify-token"
-GUEST = "491700000001"
+GUEST = "guest-1"
 
 
 def _payload(text="Haben Sie vegane Gerichte?", msg_type="text"):

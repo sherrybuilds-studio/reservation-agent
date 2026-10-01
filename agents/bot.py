@@ -469,7 +469,7 @@ def clear_conversation(phone):
 if __name__ == "__main__":
     print(f"{RESTAURANT.name} assistant — local test mode")
     print("Type your message and press Enter. 'quit' to exit.\n")
-    test_phone = "49301234567"
+    test_phone = "local-test-guest"
     while True:
         try:
             user_input = input("You: ").strip()

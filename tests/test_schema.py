@@ -6,7 +6,7 @@ from automations import broadcast, reports, review_monitor, review_responder, re
 from reservations import availability, booking, reminders, waitlist
 
 SETUP_SQL = Path(__file__).resolve().parent.parent / "setup.sql"
-GUEST = "491700000001"
+GUEST = "guest-1"
 
 
 def _schema():

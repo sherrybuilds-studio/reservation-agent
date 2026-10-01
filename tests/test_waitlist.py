@@ -23,8 +23,8 @@ def _statuses(db):
 
 
 def test_guest_is_added_once_per_slot(db):
-    first = waitlist.add_to_waitlist("491700000001", "Anna", 2, DATE, TIME)
-    again = waitlist.add_to_waitlist("491700000001", "Anna", 2, DATE, TIME)
+    first = waitlist.add_to_waitlist("guest-1", "Anna", 2, DATE, TIME)
+    again = waitlist.add_to_waitlist("guest-1", "Anna", 2, DATE, TIME)
     assert again["id"] == first["id"]
     assert len(db.rows("waitlist")) == 1
 
@@ -102,9 +102,9 @@ def _offer(name, phone, minutes_left):
 
 
 def test_ja_inside_the_window_books_the_offered_table(db, bot, offline_llm, frozen_today):
-    db.seed("waitlist", _offer("Cem", "491700000005", minutes_left=10), _offer("Eva", "491700000006", minutes_left=-2))
+    db.seed("waitlist", _offer("Cem", "guest-5", minutes_left=10), _offer("Eva", "guest-6", minutes_left=-2))
 
-    reply = bot.process_message("491700000005", "JA")
+    reply = bot.process_message("guest-5", "JA")
 
     assert "RES-" in reply and "am Freitag, 2. Oktober 2026 um 20:00 Uhr" in reply
     [booking] = db.rows("reservations")
@@ -112,15 +112,15 @@ def test_ja_inside_the_window_books_the_offered_table(db, bot, offline_llm, froz
     assert offline_llm.llm == []  # answered by the booking logic, not left to the LLM
 
     # Eva's window has closed: her JA books nothing; the expiry job passes her offer on.
-    bot.process_message("491700000006", "JA")
+    bot.process_message("guest-6", "JA")
     assert len(db.rows("reservations")) == 1
     assert _statuses(db) == {"Cem": "booked", "Eva": "notified"}
 
 
 def test_nein_passes_the_offer_to_the_next_guest(db, bot, offline_llm, frozen_today):
-    db.seed("waitlist", _offer("Cem", "491700000005", minutes_left=10), _entry("Dana", 2, "2026-09-30T10:10:00"))
+    db.seed("waitlist", _offer("Cem", "guest-5", minutes_left=10), _entry("Dana", 2, "2026-09-30T10:10:00"))
 
-    bot.process_message("491700000005", "Nein danke")
+    bot.process_message("guest-5", "Nein danke")
 
     assert _statuses(db) == {"Cem": "declined", "Dana": "notified"}
     assert db.rows("reservations") == []

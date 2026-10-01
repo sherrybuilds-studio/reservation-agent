@@ -3,7 +3,7 @@ import re
 
 from reservations import booking
 
-GUEST = "491700000001"
+GUEST = "guest-1"
 
 
 def test_create_reservation_stores_a_confirmed_booking_and_counts_visits(db):
